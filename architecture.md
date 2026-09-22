@@ -160,6 +160,10 @@ Obelus is an agent, not a script, because it **plans and adapts per input**:
 | BingX 24h tickers | `GET https://open-api.bingx.com/openApi/spot/v1/ticker/24hr` | None | Backup existence check |
 | WEEX spot markets | `GET https://api-spot.weex.com/api/v3/exchangeInfo` | None | **Verified Sep 22:** 3,508 symbols with structured `baseAsset`/`quoteAsset`/`status` (`TRADING`/`HALT`). **Use this, not `v2/public/products`**, which returns bare strings (`MRVLONUSDT_SPBL`) with no base/quote separator |
 | WEEX coin contracts | `GET https://api-spot.weex.com/api/v3/coins` | None | **Verified Sep 22:** `networkList[]` with `network` + `contractAddress` + `contractAddressUrl`; 467 of 3,971 coins carry an address. **The only exchange source that can confirm the contract** — see §10.1 |
+| MEXC spot | `GET https://api.mexc.com/api/v3/exchangeInfo?symbol=<T>USDT` | None | **Verified Sep 22:** 921 B, 171 ms warm. Returns only live symbols (all 1,950 are status `"1"`), so absence is evidence. Gate needs `isSpotTradingAllowed` too — 91 are status 1 but not tradeable |
+| Bybit spot | `GET https://api.bytick.com/v5/market/instruments-info?category=spot&symbol=<T>USDT` | None | **Verified Sep 22:** 637 B, 1.4 s warm. `baseCoin`/`quoteCoin`/`status` (`Trading` = live). Uses Bybit's alternate domain — `api.bybit.com` does not resolve from the dev network |
+| Binance spot | `GET https://api.binance.com/api/v3/exchangeInfo?symbol=<T>USDT` | None | `symbols[0]` with `baseAsset`/`quoteAsset`/`status` (`TRADING` = live). **Not verified from the dev network** — DNS-blocked from Lagos on every documented host including `data-api.binance.vision` and `api.binance.us`. Shape validated at runtime; a mismatch degrades to UNVERIFIED |
+| OKX spot | `GET https://www.okx.com/api/v5/public/instruments?instType=SPOT&instId=<T>-USDT` | None | `data[0]` with `baseCcy`/`quoteCcy`/`state` (`live`, `preopen` = announced). **Not verified from the dev network** — DNS-blocked, same as Binance |
 | CertiK project page | `https://skynet.certik.com/projects/<slug>` | None | **Verified Sep 22:** server-rendered, no Cloudflare block. `__NEXT_DATA__` is obfuscated and holds no audit data — parse the rendered HTML. Discriminator is the **"Not Audited By CertiK"** badge (§10.2). Partner API is gated — don't use |
 | DefiLlama TVL | `https://api.llama.fi/tvl/<slug>` | None | **Verified Sep 22:** bare current number, **17 bytes**; a miss returns `Protocol not found`. Use this per-claim; `/protocols` (8.9 MB decompressed, 8,325 protocols, 876 on Base) only as a cached slug map, `/protocol/<slug>` (13.9 MB) never. Cite DefiLlama as source |
 | FxTwitter | `https://api.fxtwitter.com/<user>/status/<id>` | None | Set a custom User-Agent; rate-limited → cache |
@@ -315,9 +319,22 @@ enough: 1,581 of BingX's 2,271 spot symbols are delisted entries that are still 
      `/swap/v2/quote/contracts`; the one that does (`/wallets/v1/capital/config/getall`) requires an API
      key. Every BingX VERIFIED therefore carries the `contract unconfirmed` qualifier. Say so plainly in
      the report and the submission.
-   - **CCXT exchanges, measured Sep 22** via `fetchCurrencies()`, counting only coins with a **`BASE`-keyed
-     network** entry: gate 154, kucoin 79, bitget 66 → can confirm. binance, bybit, okx, mexc expose no
-     currency networks at all → ticker-only.
+   - **CCXT is not used on the live path.** Measured Sep 22: `gate.loadMarkets()` took **46.5 s** plus
+     10.8 s for `fetchCurrencies()` — more than the entire 60 s pipeline budget — and kucoin/bitget/binance
+     took 4–6 s each against the 8 s per-call ceiling. gate, kucoin and bitget are therefore
+     `unsupported` in v1 (they return UNVERIFIED `EXCHANGE_NOT_SUPPORTED`), despite being the exchanges
+     that *do* expose Base contracts (gate 154, kucoin 79, bitget 66). Worth revisiting via direct
+     endpoints after the hackathon.
+   - **Binance, Bybit, OKX and MEXC use direct single-symbol REST** instead (§7). None publishes a
+     contract address, so all four are ticker-only.
+   - **MEXC's list is exhaustive** — all 1,950 symbols are status `"1"`, i.e. it omits delisted markets —
+     so absence from MEXC genuinely disproves a listing claim. BingX, WEEX and the others retain non-live
+     entries, so absence there stays UNVERIFIED. This distinction is carried by `listIsExhaustive` and is
+     the only thing that makes a CONTRADICTED-on-absence verdict sound.
+   - **An unreachable source is never an answer.** A DNS failure, timeout, 5xx, empty body or non-JSON
+     body must return UNVERIFIED `SOURCE_ERROR`, never "no market found" — otherwise a network blip would
+     produce CONTRADICTED against an exhaustive list, i.e. a false ❌ on a genuine listing. A 4xx *is* an
+     answer on these APIs (several return 400 for an unknown symbol) and maps to "no market".
 
      **Only a `BASE`-keyed network may enter a verdict.** Most coins expose an address on *some* chain
      (bitget: 3,993 of 5,059), and comparing a Base token against, say, a BSC address would manufacture a

@@ -1,8 +1,14 @@
 [
   {
     "id": "certik",
-    "names": ["CertiK", "Certik"],
-    "domains": ["skynet.certik.com", "certik.com"],
+    "names": [
+      "CertiK",
+      "Certik"
+    ],
+    "domains": [
+      "skynet.certik.com",
+      "www.certik.com"
+    ],
     "checker": "certik",
     "verified": "2026-09-22",
     "notes": "Direct slug fetch at skynet.certik.com/projects/<slug>. 404 = no record; 'Not Audited By CertiK' badge = CONTRADICTED; badge absent + 'Code Audit History' = VERIFIED. Never match on the section heading alone."

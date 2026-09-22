@@ -4,7 +4,7 @@
     "names": ["WEEX"],
     "checker": "weex",
     "canConfirmContract": true,
-    "notes": "Primary listing checker. v3/exchangeInfo gives baseAsset/quoteAsset/status; v3/coins gives contractAddress per network (42 coins on BASE). The only public exchange source that can detect DIFFERENT_TOKEN_SAME_TICKER. Verified Sep 22."
+    "notes": "Primary listing checker. v3/exchangeInfo gives baseAsset/quoteAsset/status (TRADING 2,454 / HALT 1,054); v3/coins gives contractAddress per network (467 of 3,971 coins, 42 on BASE). The only public exchange source that can detect DIFFERENT_TOKEN_SAME_TICKER. Verified Sep 22."
   },
   {
     "id": "bingx",
@@ -14,52 +14,52 @@
     "notes": "Ticker + status only. No public endpoint exposes a contract address, so every BingX VERIFIED is qualified 'contract unconfirmed'. Gate on status === 1: 1,581 of 2,271 symbols are not live but still returned. Verified Sep 22."
   },
   {
-    "id": "gate",
-    "names": ["Gate", "Gate.io", "Gateio"],
-    "checker": "ccxt",
-    "canConfirmContract": true,
-    "notes": "154 coins expose a BASE-network contract address via fetchCurrencies(). Verified Sep 22."
-  },
-  {
-    "id": "kucoin",
-    "names": ["KuCoin"],
-    "checker": "ccxt",
-    "canConfirmContract": true,
-    "notes": "79 coins expose a BASE-network contract address. Verified Sep 22."
-  },
-  {
-    "id": "bitget",
-    "names": ["Bitget"],
-    "checker": "ccxt",
-    "canConfirmContract": true,
-    "notes": "66 coins expose a BASE-network contract address. Verified Sep 22."
-  },
-  {
-    "id": "binance",
-    "names": ["Binance"],
-    "checker": "ccxt",
+    "id": "mexc",
+    "names": ["MEXC"],
+    "checker": "direct",
     "canConfirmContract": false,
-    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+    "notes": "api.mexc.com/api/v3/exchangeInfo?symbol= — 921 B, 171 ms warm. Returns ONLY live symbols (all 1,950 are status '1'), so absence is genuine evidence of not-listed. Gate also needs isSpotTradingAllowed: 91 symbols are status 1 but not spot-tradeable. Verified Sep 22."
   },
   {
     "id": "bybit",
     "names": ["Bybit"],
-    "checker": "ccxt",
+    "checker": "direct",
     "canConfirmContract": false,
-    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+    "notes": "api.bytick.com/v5/market/instruments-info — 637 B, 1.4 s warm. Uses Bybit's alternate domain because api.bybit.com does not resolve from the dev network. status 'Trading' = live. Verified Sep 22."
+  },
+  {
+    "id": "binance",
+    "names": ["Binance"],
+    "checker": "direct",
+    "canConfirmContract": false,
+    "notes": "api.binance.com/api/v3/exchangeInfo?symbol= — status 'TRADING' = live. UNVERIFIED FROM THE DEV NETWORK: api.binance.com does not resolve from Lagos on any documented host. Shape is validated at runtime, so a mismatch degrades to UNVERIFIED SOURCE_ERROR. Re-run spike-exchanges-direct.ts from the deployment to confirm."
   },
   {
     "id": "okx",
     "names": ["OKX", "OKEx"],
-    "checker": "ccxt",
+    "checker": "direct",
     "canConfirmContract": false,
-    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+    "notes": "okx.com/api/v5/public/instruments?instType=SPOT&instId= — state 'live' = live, 'preopen' = announced. UNVERIFIED FROM THE DEV NETWORK: www.okx.com does not resolve from Lagos. Same runtime-validation fallback as Binance."
   },
   {
-    "id": "mexc",
-    "names": ["MEXC"],
-    "checker": "ccxt",
+    "id": "gate",
+    "names": ["Gate", "Gate.io", "Gateio"],
+    "checker": "unsupported",
     "canConfirmContract": false,
-    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+    "notes": "Not supported in v1. CCXT loadMarkets() measured at 46.5 s + 10.8 s fetchCurrencies, which alone exceeds the 60 s pipeline limit. Exposes 154 Base contracts, so worth revisiting via a direct endpoint after the hackathon."
+  },
+  {
+    "id": "kucoin",
+    "names": ["KuCoin"],
+    "checker": "unsupported",
+    "canConfirmContract": false,
+    "notes": "Not supported in v1. CCXT loadMarkets() 4.1 s + fetchCurrencies 2.1 s sits at the 8 s per-call ceiling. Exposes 79 Base contracts; revisit via a direct endpoint."
+  },
+  {
+    "id": "bitget",
+    "names": ["Bitget"],
+    "checker": "unsupported",
+    "canConfirmContract": false,
+    "notes": "Not supported in v1. CCXT loadMarkets() 5.0 s + fetchCurrencies 1.7 s. Exposes 66 Base contracts; revisit via a direct endpoint."
   }
 ]

@@ -58,7 +58,42 @@ describe("exchange capability flags match what the spikes measured", () => {
 
   it("routes each exchange to a checker that exists", () => {
     for (const e of exchanges) {
-      expect(["weex", "bingx", "ccxt"]).toContain(e.checker);
+      expect(["weex", "bingx", "direct", "unsupported"]).toContain(e.checker);
+    }
+  });
+
+  it("keeps the CCXT-only exchanges out of the live path", () => {
+    // gate.loadMarkets() alone took 46.5s, more than the whole 60s pipeline budget.
+    for (const id of ["gate", "kucoin", "bitget"]) {
+      expect(findExchange(id)?.checker).toBe("unsupported");
+    }
+  });
+
+  it("never claims a direct-REST exchange can confirm a contract", () => {
+    // Binance, Bybit, OKX and MEXC publish no contract addresses, so a ✅ from any of
+    // them must stay qualified. A true flag here would produce an unearned plain ✅.
+    for (const e of exchanges.filter((x) => x.checker === "direct")) {
+      expect(e.canConfirmContract).toBe(false);
+    }
+  });
+});
+
+describe("partner registry", () => {
+  it("records provenance for every entry: a verification date or an explicit note", () => {
+    // §9 requires visiting each domain before adding it, because the partnership
+    // checker treats a page on a partner domain as proof — an unverified domain
+    // could turn into a VERIFIED partnership.
+    for (const p of partners) {
+      expect(Boolean(p.verified || p.notes), `${p.id} has no provenance`).toBe(true);
+    }
+  });
+
+  it("uses no bare protocol or path in a domain", () => {
+    for (const p of [...partners, ...auditors]) {
+      for (const d of p.domains) {
+        expect(d).not.toMatch(/^https?:\/\//);
+        expect(d).not.toContain("/");
+      }
     }
   });
 });

@@ -1,1 +1,164 @@
-[]
+[
+  {
+    "id": "chainlink",
+    "names": [
+      "Chainlink"
+    ],
+    "domains": [
+      "chain.link",
+      "blog.chain.link"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "coinbase",
+    "names": [
+      "Coinbase"
+    ],
+    "domains": [
+      "coinbase.com",
+      "www.coinbase.com"
+    ],
+    "notes": "NOT verified from the dev network: coinbase.com and www.coinbase.com both fail DNS from Lagos, same as binance.com and okx.com. Re-run scripts/verify-domains.ts from the deployment before relying on a Coinbase partnership verdict."
+  },
+  {
+    "id": "base",
+    "names": [
+      "Base",
+      "Coinbase Base"
+    ],
+    "domains": [
+      "base.org",
+      "blog.base.dev"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "circle",
+    "names": [
+      "Circle"
+    ],
+    "domains": [
+      "circle.com"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "layerzero",
+    "names": [
+      "LayerZero"
+    ],
+    "domains": [
+      "layerzero.network"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "google-cloud",
+    "names": [
+      "Google Cloud",
+      "Google"
+    ],
+    "domains": [
+      "cloud.google.com"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "microsoft",
+    "names": [
+      "Microsoft"
+    ],
+    "domains": [
+      "microsoft.com"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "polygon",
+    "names": [
+      "Polygon",
+      "Polygon Labs"
+    ],
+    "domains": [
+      "polygon.technology"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "openai",
+    "names": [
+      "OpenAI"
+    ],
+    "domains": [
+      "openai.com"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "uniswap",
+    "names": [
+      "Uniswap",
+      "Uniswap Labs"
+    ],
+    "domains": [
+      "uniswap.org",
+      "blog.uniswap.org"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "aave",
+    "names": [
+      "Aave"
+    ],
+    "domains": [
+      "aave.com"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "arbitrum",
+    "names": [
+      "Arbitrum",
+      "Offchain Labs"
+    ],
+    "domains": [
+      "arbitrum.io"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "optimism",
+    "names": [
+      "Optimism",
+      "OP Labs"
+    ],
+    "domains": [
+      "optimism.io"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "aerodrome",
+    "names": [
+      "Aerodrome",
+      "Aerodrome Finance"
+    ],
+    "domains": [
+      "aerodrome.finance"
+    ],
+    "verified": "2026-09-22"
+  },
+  {
+    "id": "nvidia",
+    "names": [
+      "NVIDIA",
+      "Nvidia"
+    ],
+    "domains": [
+      "nvidia.com"
+    ],
+    "verified": "2026-09-22"
+  }
+]

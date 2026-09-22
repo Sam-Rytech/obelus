@@ -71,7 +71,8 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 - [x] `exchanges.json` (9 entries, each flagged `canConfirmContract` from the spikes)
 - [x] `lockers.base.json` (2 UNCX entries, docs-sourced **and** code-verified on Base)
 - [x] `auditors.json` — CertiK only so far
-- [ ] `auditors.json`: remaining auditors + `partners.json` (~50) — **Day 2**, each domain must be visited before it is added (§9). `partners.json` is currently `[]`, so every partnership claim correctly returns UNVERIFIED `PARTNER_NOT_IN_REGISTRY`
+- [x] `partners.json` — top 15, **every domain verified live** by `scripts/verify-domains.ts` (19/21 reachable; Coinbase is DNS-blocked from this network and carries an explicit note instead of a verification date). Unknown partners still return UNVERIFIED `PARTNER_NOT_IN_REGISTRY`
+- [ ] `auditors.json`: auditors beyond CertiK (hacken, slowmist, peckshield, …) — deferred to Day 3 alongside `checkers/audit.ts`, which is what consumes them
 - [x] `tests/registry.test.ts` — 9 tests, incl. an assertion that the undeployed UNCX address stays out
 
 **Acceptance:** `pnpm typecheck` green ✅; `pnpm test` 9/9 ✅; registries load and validate with Zod ✅.
@@ -80,15 +81,15 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 
 ## Day 2 — Wed Sep 23: ingest + extract + first checkers
 
-- [ ] `ingest/text.ts`, `ingest/url.ts` (SSRF guard, timeout, size cap, Tavily Extract), `ingest/x.ts` (FxTwitter → oEmbed)
-- [ ] `llm.ts` adapter (Anthropic; model from `LLM_MODEL`)
-- [ ] `extract.ts` — prompt returns `{ project, claims[] }`; Zod validate; **quote guard** drops claims whose quote isn't an exact substring; mark future-tense listings
-- [ ] `checkers/exchange/bingx.ts`, `weex.ts`, `ccxt.ts` + router, per rules in §10.1 (incl. `DIFFERENT_TOKEN_SAME_TICKER`)
-- [ ] `checkers/ownership.ts` (§10.3) incl. EIP-1967 proxy detection
-- [ ] `scripts/run-fixture.ts` — run pipeline from CLI on `fixtures/*.txt`, print results
-- [ ] Tests: `tests/exchange.test.ts`, `tests/ownership.test.ts`, `tests/extract.quoteguard.test.ts`
+- [x] `ingest/text.ts`, `ingest/url.ts` (SSRF guard with per-redirect re-validation, 10 s timeout, 2 MB cap), `ingest/x.ts` (FxTwitter → oEmbed), `ingest/index.ts` (input detection)
+- [x] `llm.ts` adapter (Anthropic; model from `LLM_MODEL`; `StubLlm` so extraction is testable with no key)
+- [x] `extract.ts` — Zod validation, **quote guard**, per-type param validation, de-duplication, id renumbering, and a contract address discarded unless it appears in the source
+- [x] `checkers/exchange/` — `market.ts` (pure verdict rules), `weex.ts`, `bingx.ts`, `direct.ts` (Binance/Bybit/OKX/MEXC), `index.ts` router. **`ccxt.ts` replaced by `direct.ts`** — CCXT is too slow for the live path
+- [x] `checkers/ownership.ts` (§10.3) incl. EIP-1967 proxy detection and the renounced-but-upgradeable case
+- [x] `scripts/run-fixture.ts` — runs ingest → extract → check from the CLI; falls back to offline claim detection with no API key, so the checkers still run against live sources
+- [x] Tests: `exchange.test.ts` (13), `exchange.direct.test.ts` (14), `ownership.test.ts` (10), `extract.quoteguard.test.ts` (18), `registry.test.ts` (13) — **68 passing**
 
-**Acceptance:** `pnpm fixture fixtures/sample1.txt` prints extracted claims + real verdicts for listing and ownership claims.
+**Acceptance:** ✅ `pnpm fixture fixtures/sample1.txt` prints extracted claims and real verdicts — WEEX returns an unqualified VERIFIED via a live contract match on AERO.
 
 ---
 
@@ -184,6 +185,8 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | DefiLlama | Works — use `/tvl/<slug>` | **`/tvl/<slug>` = 17 B** (bare number; a miss returns `Protocol not found`) vs `/protocols` 8.9 MB and `/protocol/<slug>` 13.9 MB. Per-claim path is `/tvl`; `/protocols` only as a cached name→slug map (8,325 protocols, 876 on Base). |
 | EAS | Readable, no wallet needed | EAS `0x4200…0021` and SchemaRegistry `0x4200…0020` both have code on Base; `version()` = 1.0.1; `getAttestation` decodes via viem over the public RPC (~780 ms). Writing needs `ATTESTER_PRIVATE_KEY` (Day 4). |
 | Tavily | **Deferred** | Needs `TAVILY_API_KEY`. Scope shrank: CertiK no longer needs it, so it is used only for the audit fallback and PARTNERSHIP. |
+| Exchanges (direct REST) | 2/4 verified here — **replaces CCXT** | Sep 23. CCXT measured unusable: `gate.loadMarkets()` **46.5 s** + 10.8 s `fetchCurrencies` (vs a 60 s pipeline), kucoin 4.1 s, bitget 5.0 s, binance 5.8 s (vs an 8 s per-call ceiling). Direct single-symbol REST instead: **MEXC** `api/v3/exchangeInfo?symbol=` 921 B / 171 ms warm, **Bybit** `api.bytick.com/v5/market/instruments-info` 637 B / 1.4 s warm. **Binance and OKX are DNS-blocked from this network** on every documented host (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`) — adapters ship with runtime shape validation so a mismatch degrades to UNVERIFIED. None of the four publishes a contract address. |
+| Registry domains | 19/21 reachable | Sep 23, `scripts/verify-domains.ts`. `certik.com` times out but `www.certik.com` serves 200 — registry updated. **`coinbase.com` and `www.coinbase.com` fail DNS** from this network, same pattern as Binance/OKX; the entry carries an explicit note instead of a verification date. |
 
 ---
 
@@ -206,6 +209,11 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | Registry addresses must be docs-sourced **and** verified to have code on-chain | UNCX publishes a Base Uniswap-V2 locker that is not deployed on Base. Docs alone are not sufficient provenance |
 | Sep 22 | Root `app/` + hand-made `src/` (architecture §17), not `src/app/` | §17 is what every later task references; §1A's "src/ dir" was the inconsistent one |
 | Sep 22 | Scaffolded Next.js by hand instead of `create-next-app` | The CLI hangs on an interactive prompt in this environment; hand-writing 8 config files is deterministic and gives exactly the §17 layout |
+| Sep 23 | **Dropped CCXT from the live path; direct REST for Binance/Bybit/OKX/MEXC** | `gate.loadMarkets()` alone is 46.5 s against a 60 s pipeline limit. Direct single-symbol endpoints answer in 0.2–1.4 s. gate/kucoin/bitget become `unsupported` in v1 |
+| Sep 23 | **An unreachable source must never be reported as "no market"** | Found by running the fixture: a DNS failure was rendering as "not found in Binance's list". Against an exhaustive list (MEXC) that logic would turn a network blip into CONTRADICTED — a false ❌ on a real listing. Transport failures, 5xx, empty and non-JSON bodies now return SOURCE_ERROR; a 4xx is still a genuine "no market" |
+| Sep 23 | `listIsExhaustive` per exchange | Only MEXC omits delisted markets, so only MEXC can disprove a listing by absence. Encoding this per-exchange is what keeps CONTRADICTED-on-absence sound |
+| Sep 23 | Extractor discards a contract address not present in the source text | §3 forbids the model inventing a source. An unquoted address would silently redirect every on-chain checker to the wrong contract |
+| Sep 23 | Partner registry limited to a verified top 15, not the ~50 in §9 | Each domain must be visited first, and the partnership checker treats a partner-domain page as proof. Unknown partners return UNVERIFIED, so coverage grows later without any logic change |
 
 ---
 
@@ -217,20 +225,30 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | **Team Finance Base locker address not obtainable** | OPEN. `docs.team.finance` does not resolve, and no other official `team.finance` page publishes it. §9 forbids taking it from memory, so it is **not** in the registry. Effect: a Team-Finance-locked LP returns UNVERIFIED `LP_NOT_IN_KNOWN_LOCKER` — correct behaviour, not a false ❌. **To resolve:** open `docs.team.finance` in a normal browser, or open a known Team-Finance-locked Base LP on basescan and read the holder — then add it via `scripts/spike-lockers.ts` so it is code-verified before registration |
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
+| Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | OPEN, mitigated. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
+| Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
 
 ---
 
 ## Status
-**Current phase:** Day 1 complete (scaffold + all 9 spikes + core types + registries). Day 0 keys still outstanding.
+**Current phase:** Day 2 complete (ingest + extraction + listing & ownership checkers). Day 0 keys still partly outstanding.
+
+**Done Sep 23:** direct-REST exchange adapters replacing CCXT (spiked first); ingest for text/URL/X with
+a full SSRF guard; the LLM adapter and extractor with the quote guard; WEEX, BingX and direct listing
+checkers over one shared pure verdict function; the ownership checker with EIP-1967 proxy detection;
+`run-fixture.ts`; partner registry (top 15, domains verified live); **68 tests passing**, typecheck green.
+Running the fixture found and fixed a real bug: an unreachable source was being reported as "no market",
+which against MEXC's exhaustive list would have produced a false ❌.
+
 
 **Done Sep 22:** repo scaffolded in place (Next.js 15, Tailwind v4, root `app/` + `src/` per §17);
 all nine no-key spikes written, run and passing; `architecture.md` §4, §7, §10.1, §10.2, §10.4, §10.6, §20
 corrected from what the spikes actually measured; `schema.ts`, `trace.ts`, `budget.ts`, `cache.ts`;
 registries with Zod validation and 9 passing tests. `pnpm typecheck` and `pnpm test` both green.
 
-**Next task — Sam:** Day 0 keys (Anthropic + Tavily are the ones that unblock Day 2), Vercel account,
-and the Team Finance locker address (see Blockers).
+**Next task — Sam:** `ANTHROPIC_API_KEY` is now the one thing blocking a real end-to-end run (Tavily key
+obtained; put it in `.env.local`). Also: Vercel account, Upstash, and the Team Finance locker address.
 
-**Next task — build:** Day 2 — ingest (`text`/`url`/`x`), `llm.ts`, `extract.ts` + quote guard, the
-exchange checkers (WEEX first — it is the one that can reach an unqualified ✅), and `ownership.ts`.
-Ingest and the checkers can be built and tested before any key arrives; only `extract.ts` needs Anthropic.
+**Next task — build:** Day 3 — `audit.ts`, `partnership.ts`, `tvl.ts`, `lock.ts`, `resolve.ts`,
+`pipeline.ts`, `hash.ts`, and the `/api/check` SSE route. All buildable without Anthropic; only live
+extraction needs it.

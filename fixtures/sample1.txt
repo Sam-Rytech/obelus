@@ -1,0 +1,14 @@
+TEST ANNOUNCEMENT — written by the Obelus team for testing. Not a real statement by any project.
+
+Aerodrome Finance (AERO) — Ecosystem Update
+
+AERO is now listed on WEEX and BingX. The token contract is
+0x940181a94A35A4569E4529A3CDfB74e38FD98631 on Base.
+
+Our protocol has been audited by CertiK, and ownership of the token contract has been
+renounced. Liquidity is locked for 24 months with UNCX.
+
+We are also proud to announce our partnership with Chainlink. Total value locked has
+now crossed $370,000,000.
+
+AERO will be listed on Binance next month.

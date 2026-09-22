@@ -25,7 +25,8 @@ import { EvmAddress } from "../lib/schema.js";
 export const ExchangeEntry = z.object({
   id: z.string(),
   names: z.array(z.string()).min(1),
-  checker: z.enum(["weex", "bingx", "ccxt"]),
+  /** "direct" = a single-symbol public REST adapter; "unsupported" = too slow for the live path. */
+  checker: z.enum(["weex", "bingx", "direct", "unsupported"]),
   /** Whether this exchange publishes a Base contract address we can match against. */
   canConfirmContract: z.boolean(),
   notes: z.string().optional(),
@@ -45,7 +46,9 @@ export const PartnerEntry = z.object({
   id: z.string(),
   names: z.array(z.string()).min(1),
   domains: z.array(z.string()).min(1),
+  /** Date every domain was confirmed reachable. Absent = not yet verified (see notes). */
   verified: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const LockerEntry = z.object({
