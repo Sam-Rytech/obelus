@@ -1,0 +1,65 @@
+[
+  {
+    "id": "weex",
+    "names": ["WEEX"],
+    "checker": "weex",
+    "canConfirmContract": true,
+    "notes": "Primary listing checker. v3/exchangeInfo gives baseAsset/quoteAsset/status; v3/coins gives contractAddress per network (42 coins on BASE). The only public exchange source that can detect DIFFERENT_TOKEN_SAME_TICKER. Verified Sep 22."
+  },
+  {
+    "id": "bingx",
+    "names": ["BingX"],
+    "checker": "bingx",
+    "canConfirmContract": false,
+    "notes": "Ticker + status only. No public endpoint exposes a contract address, so every BingX VERIFIED is qualified 'contract unconfirmed'. Gate on status === 1: 1,581 of 2,271 symbols are not live but still returned. Verified Sep 22."
+  },
+  {
+    "id": "gate",
+    "names": ["Gate", "Gate.io", "Gateio"],
+    "checker": "ccxt",
+    "canConfirmContract": true,
+    "notes": "154 coins expose a BASE-network contract address via fetchCurrencies(). Verified Sep 22."
+  },
+  {
+    "id": "kucoin",
+    "names": ["KuCoin"],
+    "checker": "ccxt",
+    "canConfirmContract": true,
+    "notes": "79 coins expose a BASE-network contract address. Verified Sep 22."
+  },
+  {
+    "id": "bitget",
+    "names": ["Bitget"],
+    "checker": "ccxt",
+    "canConfirmContract": true,
+    "notes": "66 coins expose a BASE-network contract address. Verified Sep 22."
+  },
+  {
+    "id": "binance",
+    "names": ["Binance"],
+    "checker": "ccxt",
+    "canConfirmContract": false,
+    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+  },
+  {
+    "id": "bybit",
+    "names": ["Bybit"],
+    "checker": "ccxt",
+    "canConfirmContract": false,
+    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+  },
+  {
+    "id": "okx",
+    "names": ["OKX", "OKEx"],
+    "checker": "ccxt",
+    "canConfirmContract": false,
+    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+  },
+  {
+    "id": "mexc",
+    "names": ["MEXC"],
+    "checker": "ccxt",
+    "canConfirmContract": false,
+    "notes": "fetchCurrencies() returns no currency networks, so ticker-only. Verified Sep 22."
+  }
+]

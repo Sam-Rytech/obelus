@@ -1,0 +1,42 @@
+{
+  "name": "obelus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fact-checker for crypto announcements. The model reads, code decides.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixture": "tsx scripts/run-fixture.ts",
+    "spike": "tsx"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@ethereum-attestation-service/eas-sdk": "^2.7.0",
+    "@tavily/core": "^0.5.11",
+    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/redis": "^1.35.7",
+    "ccxt": "^4.5.9",
+    "ethers": "^6.15.0",
+    "grammy": "^1.38.2",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "viem": "^2.37.9",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@tailwindcss/postcss": "^4.1.13",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

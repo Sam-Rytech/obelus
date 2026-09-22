@@ -1,0 +1,6 @@
+allowBuilds:
+  bufferutil: set this to true or false
+  ccxt: set this to true or false
+  esbuild: set this to true or false
+  keccak: set this to true or false
+  secp256k1: set this to true or false

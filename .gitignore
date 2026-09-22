@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# production
+dist/
+
+# env — NEVER commit keys (architecture §16)
+.env
+.env*.local
+.env.production
+
+# spike raw output (large, regenerable)
+spikes/out/
+
+# misc
+.DS_Store
+*.pem
+.vercel
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# test
+coverage/

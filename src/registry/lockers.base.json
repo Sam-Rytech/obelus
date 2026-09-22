@@ -1,0 +1,18 @@
+[
+  {
+    "id": "uncx-sushi",
+    "name": "UNCX — Sushiswap (Base)",
+    "addresses": ["0xBeddF48499788607B4c2e704e9099561ab38Aae8"],
+    "lpType": "v2",
+    "source": "https://docs.uncx.network/guides/for-developers/liquidity-lockers/lockers-v2/contracts",
+    "verifiedOnChain": "2026-09-22"
+  },
+  {
+    "id": "uncx-aerodrome",
+    "name": "UNCX — Aerodrome (Base)",
+    "addresses": ["0x30e522deDfFE3e3d11Cd53E27d18Cd4F016eD870"],
+    "lpType": "v2",
+    "source": "https://docs.uncx.network/guides/for-developers/liquidity-lockers/lockers-v2/contracts",
+    "verifiedOnChain": "2026-09-22"
+  }
+]
