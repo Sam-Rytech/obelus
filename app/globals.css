@@ -378,6 +378,42 @@ a:hover {
   background: var(--paper-raised);
 }
 
+/* Who it's for: a quiet gloss under the form — the form stays the first thing. */
+.uses {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+.uses h2 {
+  font-family: var(--font-sc);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.uses dl {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+}
+.uses dt {
+  font-weight: 700;
+}
+.uses dd {
+  color: var(--ink-soft);
+}
+.uses code {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+}
+@media (min-width: 640px) {
+  .uses dl > div {
+    display: grid;
+    grid-template-columns: 13rem 1fr;
+    gap: 1.25rem;
+  }
+}
+
 /* ---- small parts --------------------------------------------------------- */
 
 .meta {
