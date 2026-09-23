@@ -106,7 +106,7 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
               {onChain && (
                 <>
                   <br />
-                  Counts on Base: {onChain.verified} verified, {onChain.contradicted} contradicted, {onChain.unverified}{" "}
+                  Counts on {net.label}: {onChain.verified} verified, {onChain.contradicted} contradicted, {onChain.unverified}{" "}
                   unverified.
                 </>
               )}
