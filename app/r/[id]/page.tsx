@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { easChainById } from "@/src/lib/chains";
 import type { CheckResult, Claim, ClaimType, Report, Verdict } from "@/src/lib/schema";
 import { getReport } from "@/src/lib/store";
 
@@ -165,15 +166,18 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       <div className="receipt">
         {report.attestation ? (
           <>
-            Receipt on Base:{" "}
+            Receipt on {easChainById(report.attestation.chain).label}:{" "}
             <a
-              href={`https://base.easscan.org/attestation/view/${report.attestation.uid}`}
+              href={`${easChainById(report.attestation.chain).easscan}/attestation/view/${report.attestation.uid}`}
               target="_blank"
               rel="noreferrer"
             >
               view the attestation
             </a>
             . Anyone can <Link href={`/r/${report.id}/verify`}>check this report hasn&rsquo;t been edited</Link>.
+            {easChainById(report.attestation.chain).testnet && (
+              <> This receipt is on a test network while Obelus is being tested.</>
+            )}
           </>
         ) : (
           <>

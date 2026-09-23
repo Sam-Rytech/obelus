@@ -11,6 +11,8 @@ import { createPublicClient, formatEther, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
+import { currentEasChain, easRpcUrl } from "@/src/lib/chains";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -70,7 +72,7 @@ async function runProbes(): Promise<Probe[]> {
     probe("fxtwitter", "FxTwitter", "Reading X posts", () =>
       http200("https://api.fxtwitter.com/i/status/20", { headers: { "user-agent": "ObelusBot/0.1" } }),
     ),
-    probe("base", "Base RPC", "Ownership, liquidity, receipts", async () => {
+    probe("base", "Base RPC", "Ownership and liquidity checks (mainnet)", async () => {
       const block = await client.getBlockNumber();
       return { ok: block > 0n, detail: `block ${block}` };
     }),
@@ -88,15 +90,19 @@ async function runProbes(): Promise<Probe[]> {
   );
 
   const pk = process.env.ATTESTER_PRIVATE_KEY;
+  const net = currentEasChain();
+  const receiptRole = `Receipts on ${net.label}`;
   probes.push(
     pk && process.env.EAS_SCHEMA_UID
-      ? probe("eas", "EAS", "Receipts on Base", async () => {
+      ? probe("eas", "EAS", receiptRole, async () => {
           const address = privateKeyToAccount((pk.startsWith("0x") ? pk : `0x${pk}`) as Hex).address;
-          const bal = await client.getBalance({ address });
+          // Balance on the RECEIPT network, which may be a testnet — not the checkers' mainnet.
+          const easClient = createPublicClient({ chain: net.chain, transport: http(easRpcUrl(net), { retryCount: 1 }) });
+          const bal = await easClient.getBalance({ address });
           // Enough for a few hundred attestations at Base fees; warn well before empty.
           return { ok: bal > 20_000_000_000_000n, detail: `attester holds ${Number(formatEther(bal)).toFixed(5)} ETH` };
         })
-      : Promise.resolve(configured("eas", "EAS", "Receipts on Base", false)),
+      : Promise.resolve(configured("eas", "EAS", receiptRole, false)),
   );
 
   // The extractor is the one step every check needs, so it gets a real probe: a

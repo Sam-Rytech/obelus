@@ -113,7 +113,15 @@ export const Report = z.object({
   engineVersion: z.string(), // git short sha
   createdAt: z.iso.datetime(),
   reportHash: z.string(), // keccak256 of canonical JSON (§11)
-  attestation: z.object({ uid: z.string(), txHash: z.string() }).optional(),
+  /** Excluded from reportHash (§11), so adding it after the fact never changes the fingerprint. */
+  attestation: z
+    .object({
+      uid: z.string(),
+      txHash: z.string(),
+      /** Which network holds the receipt. Absent on receipts written before testnet support = mainnet. */
+      chain: z.enum(["base", "base-sepolia"]).optional(),
+    })
+    .optional(),
 });
 export type Report = z.infer<typeof Report>;
 

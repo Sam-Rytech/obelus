@@ -1,8 +1,11 @@
 /**
- * Register the Obelus receipt schema on Base's EAS SchemaRegistry — architecture §11.
+ * Register the Obelus receipt schema on EAS's SchemaRegistry — architecture §11.
  *
  *   pnpm spike scripts/register-schema.ts          dry run: check the chain, send nothing
  *   pnpm spike scripts/register-schema.ts --send   register it (one transaction, attester pays)
+ *
+ * The network is EAS_CHAIN: "base-sepolia" (testnet) or "base" (mainnet). Run once per
+ * network — the schema UID is identical on both, but each chain needs its own registration.
  *
  * Schema UIDs are deterministic, so this first checks whether the identical schema is
  * already registered; if it is, there is nothing to send and that UID is simply reused.
@@ -11,16 +14,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { createPublicClient, createWalletClient, formatEther, http, zeroAddress, zeroHash, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base } from "viem/chains";
 
-import {
-  SCHEMA,
-  SCHEMA_REGISTRY_ABI,
-  SCHEMA_REGISTRY_ADDRESS,
-  SCHEMA_REVOCABLE,
-  rpcUrl,
-  schemaUid,
-} from "../src/lib/eas";
+import { currentEasChain, easRpcUrl } from "../src/lib/chains";
+import { SCHEMA, SCHEMA_REGISTRY_ABI, SCHEMA_REGISTRY_ADDRESS, SCHEMA_REVOCABLE, schemaUid } from "../src/lib/eas";
 
 function writeEnv(key: string, value: string) {
   const path = ".env.local";
@@ -32,8 +28,11 @@ function writeEnv(key: string, value: string) {
 
 async function main() {
   const uid = schemaUid();
-  const reader = createPublicClient({ chain: base, transport: http(rpcUrl(), { retryCount: 4, retryDelay: 400 }) });
+  const net = currentEasChain();
+  const transport = http(easRpcUrl(net), { retryCount: 4, retryDelay: 400 });
+  const reader = createPublicClient({ chain: net.chain, transport });
 
+  console.log(`network: ${net.label} (chain ${net.chain.id})`);
   console.log(`schema : ${SCHEMA}`);
   console.log(`uid    : ${uid}`);
 
@@ -45,8 +44,8 @@ async function main() {
   });
 
   if (existing.uid !== zeroHash) {
-    console.log(`\nAlready registered on Base — no transaction needed.`);
-    console.log(`view   : https://base.easscan.org/schema/view/${uid}`);
+    console.log(`\nAlready registered on ${net.label} — no transaction needed.`);
+    console.log(`view   : ${net.easscan}/schema/view/${uid}`);
     writeEnv("EAS_SCHEMA_UID", uid);
     console.log("EAS_SCHEMA_UID written to .env.local");
     return;
@@ -56,28 +55,28 @@ async function main() {
   if (!pk) throw new Error("ATTESTER_PRIVATE_KEY is not set");
   const account = privateKeyToAccount((pk.startsWith("0x") ? pk : `0x${pk}`) as Hex);
   const balance = await reader.getBalance({ address: account.address });
-  console.log(`\nNot registered yet.`);
-  console.log(`attester ${account.address} holds ${formatEther(balance)} ETH on Base`);
+  console.log(`\nNot registered yet on ${net.label}.`);
+  console.log(`attester ${account.address} holds ${formatEther(balance)} ETH on ${net.label}`);
 
   if (!process.argv.includes("--send")) {
     console.log("\nDry run — nothing sent. Re-run with --send to register (one transaction).");
     return;
   }
-  if (balance === 0n) throw new Error("the attester wallet has no ETH on Base — fund it first");
+  if (balance === 0n) throw new Error(`the attester wallet has no ETH on ${net.label} — fund it first`);
 
-  const wallet = createWalletClient({ account, chain: base, transport: http(rpcUrl()) });
+  const wallet = createWalletClient({ account, chain: net.chain, transport });
   const hash = await wallet.writeContract({
     address: SCHEMA_REGISTRY_ADDRESS,
     abi: SCHEMA_REGISTRY_ABI,
     functionName: "register",
     args: [SCHEMA, zeroAddress, SCHEMA_REVOCABLE],
   });
-  console.log(`tx     : https://basescan.org/tx/${hash}`);
+  console.log(`tx     : ${net.explorer}/tx/${hash}`);
   const receipt = await reader.waitForTransactionReceipt({ hash, timeout: 60_000 });
   if (receipt.status !== "success") throw new Error("registration reverted");
 
   writeEnv("EAS_SCHEMA_UID", uid);
-  console.log(`\nRegistered. https://base.easscan.org/schema/view/${uid}`);
+  console.log(`\nRegistered on ${net.label}. ${net.easscan}/schema/view/${uid}`);
   console.log("EAS_SCHEMA_UID written to .env.local");
 }
 

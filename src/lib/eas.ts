@@ -1,8 +1,9 @@
 /**
  * Receipts on Base via EAS — architecture §11.
  *
- * Every report is attested on Base mainnet: its keccak256 hash, its URL and its verdict
- * counts, signed by a dedicated attester wallet (never the registered hackathon wallet).
+ * Every report is attested on Base — Sepolia while testing, mainnet for the demo, chosen
+ * by EAS_CHAIN (see chains.ts): its keccak256 hash, its URL and its verdict counts,
+ * signed by a dedicated attester wallet (never the registered hackathon wallet).
  * Anyone can then re-hash the report JSON and compare it to the chain, which is what
  * /r/[id]/verify does in the browser.
  *
@@ -25,8 +26,8 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base } from "viem/chains";
 
+import { currentEasChain, easRpcUrl, type EasChainId } from "./chains";
 import type { Report } from "./schema";
 
 export const EAS_ADDRESS = "0x4200000000000000000000000000000000000021" as const;
@@ -180,10 +181,6 @@ export function decodeReceipt(data: Hex): ReceiptData {
   return { reportHash, reportUrl, verified, contradicted, unverified, engineVersion };
 }
 
-export function rpcUrl(): string {
-  return process.env.BASE_RPC_URL || "https://mainnet.base.org";
-}
-
 export function easConfigured(): boolean {
   return Boolean(process.env.ATTESTER_PRIVATE_KEY && process.env.EAS_SCHEMA_UID);
 }
@@ -192,15 +189,19 @@ export function easConfigured(): boolean {
  * Attest a report on Base. Returns null (receipt pending) when not configured; throws on
  * a failed transaction so the caller can log it — the report itself is already saved.
  */
-export async function attestReport(report: Report): Promise<{ uid: Hex; txHash: Hex } | null> {
+export async function attestReport(
+  report: Report,
+): Promise<{ uid: Hex; txHash: Hex; chain: EasChainId } | null> {
   const pk = process.env.ATTESTER_PRIVATE_KEY;
   const schema = process.env.EAS_SCHEMA_UID as Hex | undefined;
   if (!pk || !schema) return null;
 
+  // The RECEIPT network (EAS_CHAIN), not the checkers' mainnet RPC.
+  const net = currentEasChain();
   const account = privateKeyToAccount((pk.startsWith("0x") ? pk : `0x${pk}`) as Hex);
-  const transport = http(rpcUrl(), { retryCount: 4, retryDelay: 400 });
-  const wallet = createWalletClient({ account, chain: base, transport });
-  const reader = createPublicClient({ chain: base, transport });
+  const transport = http(easRpcUrl(net), { retryCount: 4, retryDelay: 400 });
+  const wallet = createWalletClient({ account, chain: net.chain, transport });
+  const reader = createPublicClient({ chain: net.chain, transport });
 
   const data = encodeReceipt(receiptData(report, process.env.PUBLIC_BASE_URL || "http://localhost:3000"));
 
@@ -230,7 +231,7 @@ export async function attestReport(report: Report): Promise<{ uid: Hex; txHash: 
     if (log.address.toLowerCase() !== EAS_ADDRESS.toLowerCase()) continue;
     try {
       const ev = decodeEventLog({ abi: EAS_ABI, data: log.data, topics: log.topics });
-      if (ev.eventName === "Attested") return { uid: ev.args.uid, txHash };
+      if (ev.eventName === "Attested") return { uid: ev.args.uid, txHash, chain: net.id };
     } catch {
       /* not our event */
     }

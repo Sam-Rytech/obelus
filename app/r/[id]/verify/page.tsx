@@ -13,8 +13,8 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { createPublicClient, http, type Hex } from "viem";
-import { base } from "viem/chains";
 
+import { easChainById } from "@/src/lib/chains";
 import { decodeReceipt, EAS_ABI, EAS_ADDRESS, schemaUid } from "@/src/lib/eas";
 import { reportHash } from "@/src/lib/hash";
 import type { Report } from "@/src/lib/schema";
@@ -65,7 +65,10 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           detail: "This report hasn't been attested on-chain yet, so there is nothing to compare against. Check back shortly.",
         });
       } else {
-        const client = createPublicClient({ chain: base, transport: http("https://mainnet.base.org") });
+        // Read from the network the receipt says it's on, via that network's PUBLIC RPC —
+        // deliberately not any Obelus endpoint.
+        const net = easChainById(report.attestation.chain);
+        const client = createPublicClient({ chain: net.chain, transport: http(net.rpc) });
         const att = await client.readContract({
           address: EAS_ADDRESS,
           abi: EAS_ABI,
@@ -80,11 +83,11 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
 
         out.push({
           state: rightSchema ? "pass" : "fail",
-          title: rightSchema ? "A receipt exists on Base" : "The attestation isn't an Obelus receipt",
+          title: rightSchema ? `A receipt exists on ${net.label}` : "The attestation isn't an Obelus receipt",
           detail: (
             <>
-              Read from the EAS contract on Base, not from Obelus.{" "}
-              <a href={`https://base.easscan.org/attestation/view/${report.attestation.uid}`} target="_blank" rel="noreferrer">
+              Read from the EAS contract on {net.label}, not from Obelus.{" "}
+              <a href={`${net.easscan}/attestation/view/${report.attestation.uid}`} target="_blank" rel="noreferrer">
                 View it on EASScan
               </a>
               . Recorded {new Date(Number(att.time) * 1000).toUTCString()} by{" "}
