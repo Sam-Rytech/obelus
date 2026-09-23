@@ -160,5 +160,371 @@
       "nvidia.com"
     ],
     "verified": "2026-09-22"
+  },
+  {
+    "id": "binance",
+    "names": [
+      "Binance"
+    ],
+    "domains": [
+      "binance.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "okx",
+    "names": [
+      "OKX"
+    ],
+    "domains": [
+      "okx.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "bybit",
+    "names": [
+      "Bybit"
+    ],
+    "domains": [
+      "bybit.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "kraken",
+    "names": [
+      "Kraken"
+    ],
+    "domains": [
+      "kraken.com",
+      "blog.kraken.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "upbit",
+    "names": [
+      "Upbit"
+    ],
+    "domains": [
+      "upbit.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "tether",
+    "names": [
+      "Tether"
+    ],
+    "domains": [
+      "tether.to",
+      "tether.io"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "ripple",
+    "names": [
+      "Ripple"
+    ],
+    "domains": [
+      "ripple.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "solana",
+    "names": [
+      "Solana",
+      "Solana Foundation"
+    ],
+    "domains": [
+      "solana.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "avalanche",
+    "names": [
+      "Avalanche",
+      "Ava Labs"
+    ],
+    "domains": [
+      "avax.network",
+      "avalabs.org"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "ethereum",
+    "names": [
+      "Ethereum",
+      "Ethereum Foundation"
+    ],
+    "domains": [
+      "ethereum.org"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "visa",
+    "names": [
+      "Visa"
+    ],
+    "domains": [
+      "visa.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "mastercard",
+    "names": [
+      "Mastercard"
+    ],
+    "domains": [
+      "mastercard.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "paypal",
+    "names": [
+      "PayPal"
+    ],
+    "domains": [
+      "paypal.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "aws",
+    "names": [
+      "AWS",
+      "Amazon Web Services"
+    ],
+    "domains": [
+      "aws.amazon.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "consensys",
+    "names": [
+      "Consensys",
+      "ConsenSys"
+    ],
+    "domains": [
+      "consensys.io"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "metamask",
+    "names": [
+      "MetaMask"
+    ],
+    "domains": [
+      "metamask.io"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "ledger",
+    "names": [
+      "Ledger"
+    ],
+    "domains": [
+      "ledger.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "fireblocks",
+    "names": [
+      "Fireblocks"
+    ],
+    "domains": [
+      "fireblocks.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "bitgo",
+    "names": [
+      "BitGo"
+    ],
+    "domains": [
+      "bitgo.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "animoca",
+    "names": [
+      "Animoca Brands",
+      "Animoca"
+    ],
+    "domains": [
+      "animocabrands.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "pyth",
+    "names": [
+      "Pyth",
+      "Pyth Network"
+    ],
+    "domains": [
+      "pyth.network"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "the-graph",
+    "names": [
+      "The Graph"
+    ],
+    "domains": [
+      "thegraph.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "wormhole",
+    "names": [
+      "Wormhole"
+    ],
+    "domains": [
+      "wormhole.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "celestia",
+    "names": [
+      "Celestia"
+    ],
+    "domains": [
+      "celestia.org"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "lido",
+    "names": [
+      "Lido"
+    ],
+    "domains": [
+      "lido.fi"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "ondo",
+    "names": [
+      "Ondo Finance",
+      "Ondo"
+    ],
+    "domains": [
+      "ondo.finance"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "xdc",
+    "names": [
+      "XDC Network",
+      "XDC"
+    ],
+    "domains": [
+      "xdc.org"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "lambdaclass",
+    "names": [
+      "LambdaClass",
+      "Lambda Class"
+    ],
+    "domains": [
+      "lambdaclass.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "virtuals",
+    "names": [
+      "Virtuals Protocol",
+      "Virtuals"
+    ],
+    "domains": [
+      "virtuals.io"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "eigenlayer",
+    "names": [
+      "EigenLayer",
+      "EigenCloud"
+    ],
+    "domains": [
+      "eigenlayer.xyz"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "stripe",
+    "names": [
+      "Stripe"
+    ],
+    "domains": [
+      "stripe.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "robinhood",
+    "names": [
+      "Robinhood"
+    ],
+    "domains": [
+      "robinhood.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "blackrock",
+    "names": [
+      "BlackRock"
+    ],
+    "domains": [
+      "blackrock.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "franklin-templeton",
+    "names": [
+      "Franklin Templeton"
+    ],
+    "domains": [
+      "franklintempleton.com"
+    ],
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "hashkey",
+    "names": [
+      "HashKey",
+      "HashKey Group"
+    ],
+    "domains": [
+      "hashkey.com"
+    ],
+    "verified": "2026-09-23"
   }
 ]

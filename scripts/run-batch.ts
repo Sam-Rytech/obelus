@@ -109,7 +109,8 @@ async function main() {
     await new Promise((r) => setTimeout(r, 4_000));
   }
 
-  writeFileSync("fixtures/real/results.json", `${JSON.stringify({ ranAt: new Date().toISOString(), site: BASE, rows }, null, 2)}\n`);
+  const out = process.argv[3] ?? "fixtures/real/results.json";
+  writeFileSync(out, `${JSON.stringify({ ranAt: new Date().toISOString(), site: BASE, rows }, null, 2)}\n`);
 
   const ok = rows.filter((r) => r.reportId);
   const sum = (k: "claims" | "verified" | "contradicted" | "unverified" | "notCheckable" | "sourceErrors") =>
