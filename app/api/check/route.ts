@@ -43,7 +43,11 @@ function publicError(err: unknown): { code: string; message: string } {
 }
 
 export async function POST(req: Request) {
-  const rate = await checkRate(clientIp(req.headers));
+  // Operators running a batch (Day 5's real-announcement runs) skip the public limit.
+  // Timing-safe comparison isn't needed for a long random token checked once per request.
+  const admin = process.env.ADMIN_TOKEN;
+  const isAdmin = Boolean(admin && req.headers.get("x-obelus-admin") === admin);
+  const rate = isAdmin ? { ok: true, remaining: Infinity, resetAt: 0 } : await checkRate(clientIp(req.headers));
   if (!rate.ok) {
     const retryAfter = Math.max(1, Math.ceil((rate.resetAt - Date.now()) / 1000));
     return json(
