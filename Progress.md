@@ -120,7 +120,9 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 - [x] `src/lib/eas.ts` + `anchor.ts` — attest via viem after the response (`after()`), receipt written back to the report; "receipt pending" fallback
 - [x] `scripts/register-schema.ts` — dry-run by default; schema UID `0xd10de7a2…ac4ac05` (not yet registered)
 - [x] Receipts switchable to **Base Sepolia** for testing (`EAS_CHAIN`); checkers stay on mainnet. Production currently writes to Sepolia
-- [ ] Register schema on Base Sepolia — **waits on faucet ETH** at `0x1027Ab454ef4a85271e997957a2a0A12d059F46C`; then mainnet (~$2 ETH) once the testnet run passes
+- [x] Schema registered on **Base Sepolia** ([tx](https://sepolia.basescan.org/tx/0x733647a204c38af012349bf5732fbc07a948fe7bba0cb9be37cb48683730930f)); `EAS_SCHEMA_UID` set on Vercel
+- [x] **Receipt chain proven in production**: report `VpM53187xm` attested on Sepolia; the live verify page passed all three checks, and after one verdict was flipped in Redis it flagged both the fingerprint and the on-chain mismatch (then restored). `scripts/attest-report.ts` attests any stored report
+- [ ] Switch receipts to **Base mainnet** (~$2 ETH, `EAS_CHAIN=base`, register once more) before the demo
 - [x] `app/r/[id]/verify/page.tsx` — re-hashes in the browser and reads EAS on Base directly (public RPC allows CORS)
 - [x] `src/bot/telegram.ts` + `app/api/telegram/route.ts` + `scripts/set-webhook.ts` — replies "Checking…", finishes in `after()`, edits the message
 - [x] Telegram live — **@Obelus_the_Bot**, webhook set to production with a secret (unsigned requests get 401). `/check` replies with an error until Anthropic credit lands

@@ -102,7 +102,7 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
             : "The on-chain fingerprint does NOT match — this report changed after it was recorded",
           detail: (
             <>
-              On Base: <span className="data">{onChain?.reportHash ?? "unreadable"}</span>
+              On {net.label}: <span className="data">{onChain?.reportHash ?? "unreadable"}</span>
               {onChain && (
                 <>
                   <br />
