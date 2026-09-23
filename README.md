@@ -166,7 +166,7 @@ token and the attester key are optional. Every variable is documented in
 [`.env.example`](.env.example).
 
 ```bash
-pnpm test                                   # 190 tests, no network
+pnpm test                                   # 202 tests, no network
 pnpm typecheck
 pnpm fixture fixtures/sample1.txt          # run one input through the full pipeline
 ```
