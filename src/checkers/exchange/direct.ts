@@ -134,10 +134,11 @@ export const DIRECT_EXCHANGES: Record<string, DirectExchange> = {
  * MEXC's, absence means CONTRADICTED, so a DNS blip or timeout would otherwise stamp
  * a false ❌ on a real listing. A source we could not read is evidence of nothing (§3).
  *
- * A 4xx IS an answer on these APIs — several return 400 for an unknown symbol — so it
- * maps to "no market". A 5xx or a transport failure throws and fails closed (§18).
+ * Only 400/404 are answers — several of these APIs use them for an unknown symbol — and
+ * map to "no market". 451/403 (region blocks), 401, 429, 5xx and transport failures
+ * throw and fail closed (§18).
  */
-async function fetchMarket(ex: DirectExchange, url: string, ctx: Ctx): Promise<Parsed | null> {
+async function fetchMarket(ex: DirectExchange, url: string, ctx: Ctx): Promise<{ parsed: Parsed | null; status: number }> {
   let res: Response;
   try {
     res = await fetch(url, {
@@ -152,7 +153,16 @@ async function fetchMarket(ex: DirectExchange, url: string, ctx: Ctx): Promise<P
     throw new Error(`could not reach ${ex.label}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  // Only a successful reply, or the exchange's own "no such symbol" (400/404), is an
+  // ANSWER about the market. Everything else is the source refusing US: Binance serves
+  // HTTP 451 "restricted location" to Vercel's US region, and treating that 4xx as
+  // "no market" produced "Not on Binance yet" for a coin that trades there (Sep 24).
+  if (res.status === 451 || res.status === 403) {
+    throw new Error(`${ex.label} refuses requests from this server's region (HTTP ${res.status})`);
+  }
+  if (res.status === 401 || res.status === 429) throw new Error(`${ex.label} refused the request (HTTP ${res.status})`);
   if (res.status >= 500) throw new Error(`${ex.label} returned HTTP ${res.status}`);
+  if (!res.ok && res.status !== 400 && res.status !== 404) throw new Error(`${ex.label} returned HTTP ${res.status}`);
 
   const text = await res.text();
   if (!text.trim()) throw new Error(`${ex.label} returned an empty body (HTTP ${res.status})`);
@@ -164,7 +174,7 @@ async function fetchMarket(ex: DirectExchange, url: string, ctx: Ctx): Promise<P
     throw new Error(`${ex.label} returned a non-JSON body (HTTP ${res.status})`);
   }
 
-  return ex.parse(body);
+  return { parsed: ex.parse(body), status: res.status };
 }
 
 export function makeDirectChecker(id: keyof typeof DIRECT_EXCHANGES | string) {
@@ -179,7 +189,8 @@ export function makeDirectChecker(id: keyof typeof DIRECT_EXCHANGES | string) {
       }
 
       const url = ex.url(ticker);
-      const parsed = await cached(`${ex.id}:sym:${ticker}`, TTL.EXCHANGE_SYMBOLS, async () => {
+      // v2 key: v1 entries could hold a region-block misread as "no market".
+      const { parsed, status } = await cached(`${ex.id}:sym:v2:${ticker}`, TTL.EXCHANGE_SYMBOLS, async () => {
         ctx.budget.spend(`${ex.id}:symbol`);
         return fetchMarket(ex, url, ctx);
       });
@@ -190,7 +201,8 @@ export function makeDirectChecker(id: keyof typeof DIRECT_EXCHANGES | string) {
           url,
           parsed
             ? `${parsed.symbol}: base=${parsed.base}, quote=${parsed.quote}, status=${parsed.rawStatus}`
-            : `${ex.label} returned no ${ticker}/USDT spot market`,
+            // Quote the HTTP status: "not listed" must be visibly an answer, not an error.
+            : `HTTP ${status}: ${ex.label} returned no ${ticker}/USDT spot market`,
         ),
       ];
 

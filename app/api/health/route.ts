@@ -27,8 +27,13 @@ const TIMEOUT = 6_000;
 
 async function http200(url: string, init?: RequestInit, okStatus = (s: number) => s < 500): Promise<{ ok: boolean; detail: string }> {
   const res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
-  // Some probes deliberately hit a missing resource: any answer (even 404) means the source is up.
   const body = await res.text();
+  // A region block is the source refusing US to serve US — "up" would be a lie. Binance
+  // answers Vercel's US region with 451; the earlier "any answer means up" rule hid that.
+  if (res.status === 451 || res.status === 403) {
+    return { ok: false, detail: `blocked from this server's region (HTTP ${res.status})` };
+  }
+  // Some probes deliberately hit a missing resource: a 404 still means the source is up.
   return { ok: okStatus(res.status) && body.length > 0, detail: `HTTP ${res.status}` };
 }
 

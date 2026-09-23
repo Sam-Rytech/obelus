@@ -100,6 +100,32 @@ describe("an unreachable source is never treated as an answer", () => {
     expect(r.reason).toContain("SOURCE_ERROR");
   });
 
+  it("treats a region block (451) as an error, never as 'no market'", async () => {
+    // Real: Binance answers Vercel's US region with 451, which became "Not on Binance yet"
+    // for a coin trading there. Against MEXC's exhaustive list it would have been ❌.
+    mockFetch(() => json({ code: 0, msg: "Service unavailable from a restricted location" }, 451));
+    const r = await makeDirectChecker("mexc")(claim, project, ctx());
+    expect(r.verdict).toBe("UNVERIFIED");
+    expect(r.reason).toContain("SOURCE_ERROR");
+    expect(r.reason).toContain("region");
+  });
+
+  it("treats 403, 401 and 429 as errors too", async () => {
+    for (const status of [403, 401, 429]) {
+      resetCacheForTests();
+      mockFetch(() => json({}, status));
+      const r = await makeDirectChecker("mexc")(claim, project, ctx());
+      expect(r.verdict, `HTTP ${status}`).toBe("UNVERIFIED");
+      expect(r.reason).toContain("SOURCE_ERROR");
+    }
+  });
+
+  it("quotes the HTTP status when a market is genuinely absent", async () => {
+    mockFetch(() => json({ symbols: [] }));
+    const r = await makeDirectChecker("mexc")(claim, project, ctx());
+    expect(r.evidence[0]?.excerpt).toMatch(/^HTTP 200: /);
+  });
+
   it("returns UNVERIFIED on a 5xx", async () => {
     mockFetch(() => new Response("upstream exploded", { status: 503 }));
     const r = await makeDirectChecker("mexc")(claim, project, ctx());

@@ -101,7 +101,8 @@ export function pickCertikSlug(urls: string[], projectName: string): string | nu
 
 async function readSlug(slug: string, ctx: Ctx): Promise<CertikReading> {
   // Cache the parsed reading, never the ~850 KB page (Upstash values cap at 1 MB).
-  return cached(`certik:${slug}`, TTL.CERTIK, async () => {
+  // v2 key: v1 readings were cached before the half-cut-tag fix and still leaked HTML.
+  return cached(`certik:v2:${slug}`, TTL.CERTIK, async () => {
     ctx.budget.spend("certik:page");
     const { status, body } = await getText(`${SKYNET}${slug}`, ctx);
     return readCertikPage(status, body);
