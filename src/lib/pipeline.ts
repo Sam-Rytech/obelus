@@ -21,8 +21,9 @@ import { createLlm, LlmNotConfiguredError, type Llm } from "./llm";
 import { resolveContract } from "./resolve";
 import { Report, type CheckResult, type Claim, type ClaimType } from "./schema";
 import type { Searcher } from "./search";
+import { parseListingQuestion } from "./question";
 import { newReportId, saveReport } from "./store";
-import { summarize } from "./summary";
+import { summarize, summarizeQuestion } from "./summary";
 import { Trace, type TraceEvent } from "./trace";
 
 /** Per-claim ceiling. Checks run in parallel, so this bounds the check phase too. */
@@ -113,36 +114,52 @@ export async function runPipeline(input: string, opts: PipelineOptions = {}): Pr
       `${ingested.source ? ` (${ingested.source.label})` : ""} — ${ingested.fetchedText.length} characters`,
   );
 
-  // 2. EXTRACT — the only model call
-  let llm: Llm;
-  try {
-    llm = opts.llm ?? createLlm();
-  } catch (err) {
-    if (err instanceof LlmNotConfiguredError) throw new PipelineError("Claim extraction is not configured", "LLM_NOT_CONFIGURED");
-    throw err;
-  }
-  trace.step("Extracting checkable claims");
-  let extraction;
-  try {
-    extraction = await extract(llm, ingested.fetchedText);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new PipelineError(`Claim extraction failed: ${msg.slice(0, 200)}`, "EXTRACTION_FAILED");
-  }
-  for (const d of extraction.dropped) {
-    trace.step(`Discarded a ${d.type} claim (${d.reason.split(":")[0]}): "${d.quote.slice(0, 60)}"`);
-  }
-  const { claims } = extraction;
-  trace.step(
-    claims.length
-      ? `Found ${claims.length} claim${claims.length === 1 ? "" : "s"}: ${[...new Set(claims.map((c) => c.type))].join(", ")}`
-      : "Found no checkable claims",
-  );
+  // 1b. A listing question ("is $BTC listed?") names its own checks; code parses it and
+  // there is nothing for the model to extract.
+  const question = ingested.kind === "text" ? parseListingQuestion(ingested.fetchedText) : null;
 
-  // 3. RESOLVE — only if some claim needs the contract
-  let project = extraction.project;
-  if (claims.some((c) => NEEDS_CONTRACT.includes(c.type))) {
-    project = (await resolveContract(project, ctx)).project;
+  let claims: Claim[];
+  let project: Report["project"];
+  if (question) {
+    ({ claims } = question);
+    // No contract is resolved: a question names none, and guessing one from the ticker
+    // could pick a same-ticker clone. The answer is about the ticker, and says so.
+    project = { ticker: question.ticker, chain: "base" };
+    trace.step(
+      `A listing question — asking ${claims.length} exchange${claims.length === 1 ? "" : "s"} about ${question.ticker} directly, no model needed`,
+    );
+  } else {
+    // 2. EXTRACT — the only model call
+    let llm: Llm;
+    try {
+      llm = opts.llm ?? createLlm();
+    } catch (err) {
+      if (err instanceof LlmNotConfiguredError) throw new PipelineError("Claim extraction is not configured", "LLM_NOT_CONFIGURED");
+      throw err;
+    }
+    trace.step("Extracting checkable claims");
+    let extraction;
+    try {
+      extraction = await extract(llm, ingested.fetchedText);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new PipelineError(`Claim extraction failed: ${msg.slice(0, 200)}`, "EXTRACTION_FAILED");
+    }
+    for (const d of extraction.dropped) {
+      trace.step(`Discarded a ${d.type} claim (${d.reason.split(":")[0]}): "${d.quote.slice(0, 60)}"`);
+    }
+    claims = extraction.claims;
+    trace.step(
+      claims.length
+        ? `Found ${claims.length} claim${claims.length === 1 ? "" : "s"}: ${[...new Set(claims.map((c) => c.type))].join(", ")}`
+        : "Found no checkable claims",
+    );
+
+    // 3. RESOLVE — only if some claim needs the contract
+    project = extraction.project;
+    if (claims.some((c) => NEEDS_CONTRACT.includes(c.type))) {
+      project = (await resolveContract(project, ctx)).project;
+    }
   }
 
   // 4. CHECK — in parallel, every claim guaranteed a result
@@ -154,10 +171,11 @@ export async function runPipeline(input: string, opts: PipelineOptions = {}): Pr
   const draft = {
     id: newReportId(),
     input: { kind: ingested.kind, value: input.slice(0, 2_000), fetchedText: ingested.fetchedText },
+    ...(question ? { mode: "question" as const } : {}),
     project,
     claims,
     results,
-    summary: summarize(project, claims, results),
+    summary: question ? summarizeQuestion(question.ticker, claims, results) : summarize(project, claims, results),
     trace: trace.all(),
     engineVersion: engineVersion(),
     createdAt: new Date().toISOString(),

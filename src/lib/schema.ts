@@ -104,6 +104,12 @@ export const Report = z.object({
     value: z.string(),
     fetchedText: z.string(),
   }),
+  /**
+   * "question": the input was a listing question ("is $BTC listed?") answered by code
+   * without extraction (src/lib/question.ts). Absent for announcements, so their
+   * reports and fingerprints are unchanged.
+   */
+  mode: z.literal("question").optional(),
   project: Project,
   claims: z.array(Claim),
   results: z.array(CheckResult),

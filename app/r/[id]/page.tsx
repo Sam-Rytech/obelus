@@ -47,6 +47,7 @@ function counts(results: CheckResult[]) {
 
 function projectTitle(r: Report) {
   const { name, ticker } = r.project;
+  if (r.mode === "question") return `Is ${ticker ?? "it"} listed?`;
   if (name && ticker) return `${name} (${ticker})`;
   return name ?? ticker ?? "Unnamed project";
 }
@@ -62,17 +63,30 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-function ClaimEntry({ claim, result, index }: { claim: Claim; result: CheckResult; index: number }) {
+function ClaimEntry({
+  claim,
+  result,
+  index,
+  question,
+}: {
+  claim: Claim;
+  result: CheckResult;
+  index: number;
+  /** A listing question: every card shares the question as its quote, so show the exchange instead. */
+  question: boolean;
+}) {
   return (
     <li className="margined">
       <div className="sign" data-verdict={result.verdict}>
         <Sign verdict={result.verdict} />
       </div>
       <div>
-        <p className="claim-quote">{claim.quote.replace(/\s+/g, " ").trim()}</p>
+        <p className="claim-quote">
+          {question ? `Listed on ${String(claim.params.exchange)}?` : claim.quote.replace(/\s+/g, " ").trim()}
+        </p>
         <p className="claim-kind">
-          {CLAIM_KIND[claim.type]}
-          {typeof claim.params.exchange === "string" && ` on ${claim.params.exchange}`}
+          {question ? "Answered by the exchange's own API" : CLAIM_KIND[claim.type]}
+          {!question && typeof claim.params.exchange === "string" && ` on ${claim.params.exchange}`}
           {typeof claim.params.auditor === "string" && ` by ${claim.params.auditor}`}
           {typeof claim.params.partner === "string" && ` with ${claim.params.partner}`}
         </p>
@@ -142,7 +156,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <span>
           Checked {checked} UTC from{" "}
           {report.input.kind === "text" ? (
-            INPUT_KIND.text
+            report.mode === "question" ? "a question" : INPUT_KIND.text
           ) : (
             <a href={report.input.value} target="_blank" rel="noreferrer">
               {INPUT_KIND[report.input.kind]}
@@ -200,7 +214,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <ol className="claims">
           {report.claims.map((claim, i) => {
             const result = byClaim.get(claim.id);
-            return result ? <ClaimEntry key={claim.id} claim={claim} result={result} index={i} /> : null;
+            return result ? (
+                <ClaimEntry key={claim.id} claim={claim} result={result} index={i} question={report.mode === "question"} />
+              ) : null;
           })}
         </ol>
       )}

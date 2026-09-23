@@ -49,7 +49,7 @@ export function looksLikeQuestion(text: string): boolean {
 }
 
 export const QUESTION_HINT =
-  "Obelus checks what an announcement claims, and a question doesn't claim anything. Paste the announcement or post that makes the claim, or its link — for example “BTC is now listed on WEEX”.";
+  "Obelus checks what an announcement claims. The one question it answers directly is whether a token is listed, for example “Is $BTC listed on BingX?”. For anything else, paste the announcement or post that makes the claim, or its link.";
 
 export function tally(results: Pick<CheckResult, "verdict" | "reason">[]): Tally {
   const t: Tally = { verified: 0, contradicted: 0, unverified: 0, notCheckable: 0 };
@@ -96,5 +96,33 @@ export function summarize(project: Project, claims: Claim[], results: CheckResul
     );
   }
 
+  return parts.join(" ");
+}
+
+/**
+ * Summary for a listing question ("is $BTC listed?"): one line per answer, built from
+ * the same verdicts. Each exchange appears once, under what its own API said.
+ */
+export function summarizeQuestion(ticker: string, claims: Claim[], results: CheckResult[]): string {
+  const exchangeOf = new Map(claims.map((c) => [c.id, String(c.params.exchange ?? "an exchange")]));
+  const groups = { trading: [] as string[], notTrading: [] as string[], announced: [] as string[], notFound: [] as string[], unknown: [] as string[] };
+  for (const r of results) {
+    const ex = exchangeOf.get(r.claimId) ?? "an exchange";
+    if (r.verdict === "VERIFIED") groups.trading.push(ex);
+    else if (r.verdict === "CONTRADICTED") groups.notTrading.push(ex);
+    else if (r.reason.startsWith("FUTURE_CLAIM")) groups.announced.push(ex);
+    else if (r.reason.startsWith("NOT_IN_EXCHANGE_MARKET_LIST")) groups.notFound.push(ex);
+    else groups.unknown.push(ex);
+  }
+  const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+
+  const parts: string[] = [];
+  if (groups.trading.length) parts.push(`${ticker} is trading on ${list(groups.trading)}.`);
+  if (groups.notTrading.length) parts.push(`Not trading on ${list(groups.notTrading)}, according to ${groups.notTrading.length === 1 ? "that exchange's" : "those exchanges'"} own data.`);
+  if (groups.announced.length) parts.push(`Announced but not trading yet on ${list(groups.announced)}.`);
+  if (groups.notFound.length) parts.push(`No ${ticker}/USDT spot market found on ${list(groups.notFound)}.`);
+  if (groups.unknown.length) parts.push(`Couldn't get an answer from ${list(groups.unknown)} (see each card).`);
+  if (!parts.length) parts.push(`Obelus couldn't find ${ticker} on any exchange it checks.`);
+  parts.push("Obelus looks up the ticker only, so it can't confirm which token an exchange means by it.");
   return parts.join(" ");
 }

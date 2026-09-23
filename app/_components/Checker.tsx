@@ -101,7 +101,7 @@ export function Checker({ examples }: { examples: Example[] }) {
           void run(input);
         }}
       >
-        <label htmlFor="input">An X post link, a web page URL, or the announcement text</label>
+        <label htmlFor="input">An X post link, a web page URL, the announcement text, or a question like “Is $PEPE listed on MEXC?”</label>
         <textarea
           id="input"
           name="input"

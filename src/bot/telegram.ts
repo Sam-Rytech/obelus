@@ -30,6 +30,7 @@ const WORD: Record<Verdict, string> = { VERIFIED: "Verified", CONTRADICTED: "Con
 const HELP = `<b>Obelus</b> checks crypto announcements claim by claim, against the one source that can confirm each claim.
 
 <b>/check</b> followed by an X post link, a web page link or the announcement text.
+Or ask: <b>/check is $PEPE listed on MEXC?</b>
 Or reply <b>/check</b> to a message to check that message.
 
 ※ verified   ÷ contradicted   ? unverified (no source could settle it — not the same as false)`;
@@ -59,11 +60,14 @@ const PRIORITY: Record<Verdict, number> = { CONTRADICTED: 0, VERIFIED: 1, UNVERI
 /** Pure: the reply for a finished report. Exported for tests. */
 export function formatReport(report: Report, baseUrl: string): string {
   const t = tally(report.results);
-  const name = report.project.name ?? report.project.ticker ?? "this announcement";
+  const question = report.mode === "question";
+  const name = question
+    ? `Is ${report.project.ticker ?? "it"} listed?`
+    : (report.project.name ?? report.project.ticker ?? "this announcement");
   const byId = new Map(report.claims.map((c) => [c.id, c]));
 
   const lines = [
-    `<b>${escapeHtml(name)}</b>${report.project.ticker && report.project.name ? ` (${escapeHtml(report.project.ticker)})` : ""}`,
+    `<b>${escapeHtml(name)}</b>${!question && report.project.ticker && report.project.name ? ` (${escapeHtml(report.project.ticker)})` : ""}`,
     `※ ${t.verified} verified   ÷ ${t.contradicted} contradicted   ? ${t.unverified} unverified` +
       (t.notCheckable ? `   (${t.notCheckable} not checkable yet)` : ""),
   ];
@@ -72,16 +76,19 @@ export function formatReport(report: Report, baseUrl: string): string {
     lines.push("<i>Test announcement written by the Obelus team.</i>");
   }
 
-  const top = [...report.results].sort((a, b) => PRIORITY[a.verdict] - PRIORITY[b.verdict]).slice(0, 3);
+  // A question's answers are short (one per exchange), so show them all.
+  const shown = question ? 8 : 3;
+  const top = [...report.results].sort((a, b) => PRIORITY[a.verdict] - PRIORITY[b.verdict]).slice(0, shown);
   if (top.length) lines.push("");
   for (const r of top) {
     const claim = byId.get(r.claimId);
     if (!claim) continue;
-    lines.push(`${MARK[r.verdict]} <b>${WORD[r.verdict]}</b> — “${escapeHtml(short(claim.quote, 90))}”`);
+    const label = question ? `Listed on ${String(claim.params.exchange)}?` : `“${short(claim.quote, 90)}”`;
+    lines.push(`${MARK[r.verdict]} <b>${WORD[r.verdict]}</b> — ${escapeHtml(label)}`);
     const why = r.qualifier ?? r.reason.split(" — ")[1] ?? "";
     if (why) lines.push(`   ${escapeHtml(short(why, 120))}`);
   }
-  if (report.results.length > 3) lines.push(`…and ${report.results.length - 3} more.`);
+  if (report.results.length > shown) lines.push(`…and ${report.results.length - shown} more.`);
   if (report.claims.length === 0) {
     lines.push(looksLikeQuestion(report.input.fetchedText) ? escapeHtml(QUESTION_HINT) : "No checkable claims found.");
   }
