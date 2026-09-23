@@ -161,7 +161,7 @@ export function decideListing(
   // Live, but nobody can confirm WHICH token. Never a plain ✅ (§20).
   const why = !lookup.contractOnBase
     ? `${exchangeLabel} publishes no contract address for this asset`
-    : "the announcement did not state a contract address";
+    : "no contract address was given to compare it with";
   return result(
     claim,
     "VERIFIED",
