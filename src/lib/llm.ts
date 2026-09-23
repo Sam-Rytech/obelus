@@ -193,10 +193,15 @@ export class FallbackLlm implements Llm {
   async complete(args: CompleteArgs): Promise<string> {
     let last: unknown;
     for (const llm of this.chain) {
+      const t0 = Date.now();
       try {
-        return await llm.complete(args);
+        const out = await llm.complete(args);
+        console.info(`[llm] ${llm.name} answered in ${Date.now() - t0}ms`);
+        return out;
       } catch (err) {
         last = err;
+        // Logged per attempt so a production failure says WHICH model failed and HOW.
+        console.warn(`[llm] ${llm.name} failed after ${Date.now() - t0}ms: ${err instanceof Error ? err.message : String(err)}`);
         if (!isRetryable(err)) throw err;
       }
     }
