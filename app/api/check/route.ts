@@ -9,8 +9,12 @@
  * Rate-limited to 10 checks per IP per hour: each check costs a model call and
  * search credits.
  */
+import { after } from "next/server";
+
+import { anchorReport } from "@/src/lib/anchor";
 import { PipelineError, runPipeline } from "@/src/lib/pipeline";
 import { checkRate, clientIp } from "@/src/lib/ratelimit";
+import type { Report } from "@/src/lib/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +58,15 @@ export async function POST(req: Request) {
   if (!input) return json(400, { code: "EMPTY_INPUT", message: "Send { input: string } — a URL, an X post link, or announcement text." });
   if (input.length > MAX_BODY_CHARS) return json(413, { code: "INPUT_TOO_LONG", message: "Input is too long." });
 
+  // Receipt on Base (§11) AFTER the response: the user gets their link without waiting on
+  // gas, and after() keeps the serverless function alive until the attestation lands.
+  let settle: (r: Report | null) => void = () => {};
+  const finished = new Promise<Report | null>((resolve) => (settle = resolve));
+  after(async () => {
+    const report = await finished;
+    if (report) await anchorReport(report);
+  });
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -75,9 +88,11 @@ export async function POST(req: Request) {
           unverified: report.results.filter((r) => r.verdict === "UNVERIFIED").length,
         };
         send("done", { reportId: report.id, counts });
+        settle(report);
       } catch (err) {
         console.error("[api/check]", err);
         send("error", publicError(err));
+        settle(null);
       } finally {
         if (open) {
           try {

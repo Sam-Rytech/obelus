@@ -130,7 +130,12 @@ export function decideListing(
 
   if (listed && claimed) {
     if (listed === claimed) {
-      return result(claim, "VERIFIED", `${REASON.LISTED_CONTRACT_MATCHES} — ${where}`, ev);
+      return result(
+        claim,
+        "VERIFIED",
+        `${REASON.LISTED_CONTRACT_MATCHES} — ${where}, and the token contract ${exchangeLabel} lists is the one in the announcement`,
+        ev,
+      );
     }
     // If WE inferred the contract, the mismatch may be our wrong guess (a same-ticker
     // clone on DexScreener), not the project's lie. That is not proof of anything.

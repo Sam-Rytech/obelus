@@ -1,24 +1,464 @@
 @import "tailwindcss";
 
+/*
+ * Obelus — "scholar's margin".
+ * Colours are manuscript pigments, and each carries a meaning: verdigris for what the
+ * source attests, rubric red for what doesn't hold up, yellow ochre for what no source
+ * could settle. Nothing is coloured for decoration.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-}
+  --paper: #edebe3; /* cool vellum */
+  --paper-raised: #f5f3ec;
+  --ink: #241e17; /* iron-gall */
+  --ink-soft: #5d5448;
+  --rule: #cbc4b4;
+  --verified: #2e6a54; /* verdigris */
+  --contradicted: #a8362b; /* rubric red */
+  --unverified: #8c6a1c; /* yellow ochre */
+  --focus: #2b4f8c;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --measure: 62ch;
+  --gutter: 3.25rem; /* the margin where sigla sit */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* ink on slate */
+    --paper: #1d2025;
+    --paper-raised: #252930;
+    --ink: #e6e0d4;
+    --ink-soft: #a89f90;
+    --rule: #3a3f47;
+    --verified: #6fb99a;
+    --contradicted: #e77a6c;
+    --unverified: #d6b25a;
+    --focus: #8fb3f0;
   }
 }
 
+@theme inline {
+  --font-serif: var(--font-alegreya), "Iowan Old Style", Georgia, serif;
+  --font-sc: var(--font-alegreya-sc), var(--font-alegreya), Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.6; /* serif body wants a little more lead */
+  font-feature-settings: "kern", "liga", "onum"; /* old-style figures sit in running text */
+  min-height: 100dvh;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--unverified) 30%, transparent);
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Addresses, hashes and raw source excerpts are data; they get a monospace. Nothing else does. */
+.data {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  font-feature-settings: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ---- page frame ----------------------------------------------------------- */
+
+.page {
+  max-width: calc(var(--measure) + var(--gutter) + 2rem);
+  margin-inline: auto;
+  padding: 1.25rem 1rem 4rem;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+.wordmark svg {
+  width: 0.85em;
+  height: 0.85em;
+  color: var(--contradicted);
+  transform: translateY(0.08em);
+}
+.masthead nav {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 1rem;
+}
+
+/* Headings: Alegreya's own weight and size do the work; no ornament. */
+.title {
+  font-size: clamp(1.9rem, 5.5vw, 2.6rem);
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  max-width: 26ch;
+  text-wrap: balance;
+}
+.lede {
+  margin-top: 1rem;
+  max-width: var(--measure);
+  color: var(--ink-soft);
+  font-size: 1.2rem;
+  text-wrap: pretty;
+}
+.prose {
+  max-width: var(--measure);
+}
+.prose p + p {
+  margin-top: 0.9em;
+}
+.prose h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin: 2.25rem 0 0.5rem;
+}
+.prose ul {
+  margin: 0.5rem 0 0 1.1rem;
+  list-style: disc;
+}
+.prose li + li {
+  margin-top: 0.3rem;
+}
+
+/* ---- the margin ---------------------------------------------------------- */
+
+/*
+ * The core device: a gutter on the left where the critical sign sits, beside the line
+ * it judges — the way Aristarchus and Origen marked a manuscript.
+ */
+.margined {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+}
+.sign {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 0.9rem;
+  padding-top: 0.2rem;
+}
+.sign svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+.sign[data-verdict="VERIFIED"] { color: var(--verified); }
+.sign[data-verdict="CONTRADICTED"] { color: var(--contradicted); }
+.sign[data-verdict="UNVERIFIED"] { color: var(--unverified); }
+
+/* ---- the stamp: the one bold element ------------------------------------- */
+
+.stamp {
+  --stamp: var(--unverified);
+  display: inline-block;
+  font-family: var(--font-sc);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  color: var(--stamp);
+  padding: 0.5rem 0.85rem 0.58rem;
+  border: 2.5px solid var(--stamp);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4.5px var(--stamp); /* double rule */
+  border-radius: 3px;
+  transform: rotate(-2deg);
+  /* ink doesn't sit perfectly flat */
+  mask-image: radial-gradient(circle at 30% 40%, #000 62%, rgb(0 0 0 / 0.86) 100%);
+}
+.stamp[data-verdict="VERIFIED"] { --stamp: var(--verified); }
+.stamp[data-verdict="CONTRADICTED"] { --stamp: var(--contradicted); transform: rotate(1.5deg); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The single orchestrated moment: each stamp is pressed onto the page once. */
+  .stamp[data-press] {
+    animation: press 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+    animation-delay: calc(var(--i, 0) * 110ms + 150ms);
+  }
+  @keyframes press {
+    from { opacity: 0; transform: scale(1.35) rotate(-6deg); }
+    to { opacity: 1; }
+  }
+}
+
+/* ---- claims -------------------------------------------------------------- */
+
+.claims {
+  display: grid;
+  gap: 2.25rem;
+  margin-top: 2.5rem;
+}
+.claim-quote {
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.claim-quote::before { content: "\201C"; }
+.claim-quote::after { content: "\201D"; }
+.check-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+.claim-kind {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin-top: 0.15rem;
+}
+.claim-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.8rem;
+}
+.claim-reason {
+  margin-top: 0.6rem;
+  max-width: var(--measure);
+}
+.claim-qualifier {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+.proof {
+  margin-top: 0.75rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--rule);
+  font-size: 1rem;
+}
+.proof + .proof { margin-top: 0.5rem; }
+.proof-excerpt {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--ink-soft);
+}
+
+/* ---- tallies ------------------------------------------------------------- */
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  margin-top: 1.5rem;
+  font-size: 1.05rem;
+}
+.tally span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tally svg { width: 1.05rem; height: 1.05rem; }
+.tally [data-verdict="VERIFIED"] svg { color: var(--verified); }
+.tally [data-verdict="CONTRADICTED"] svg { color: var(--contradicted); }
+.tally [data-verdict="UNVERIFIED"] svg { color: var(--unverified); }
+
+/* ---- the check form ------------------------------------------------------ */
+
+.check-form {
+  margin-top: 2rem;
+  max-width: calc(var(--measure) + 4ch);
+}
+.check-form label {
+  display: block;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+.check-form textarea {
+  width: 100%;
+  min-height: 9.5rem;
+  resize: vertical;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.check-form textarea::placeholder { color: var(--ink-soft); opacity: 0.8; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.9rem;
+}
+.button {
+  display: inline-block;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 0.6rem 1.15rem;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.button:hover { background: color-mix(in srgb, var(--ink) 85%, var(--paper)); }
+.button:disabled { opacity: 0.55; cursor: progress; }
+.linkish {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.linkish:hover { color: var(--ink); }
+
+/* ---- live trace as margin notes ------------------------------------------ */
+
+.notes {
+  margin-top: 2rem;
+  max-width: var(--measure);
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+.notes ol { display: grid; gap: 0.3rem; }
+.notes li {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+}
+.notes li::before {
+  content: "\2767"; /* rotated floral heart — a scribe's paragraph mark */
+  text-align: right;
+  padding-right: 0.9rem;
+  color: var(--rule);
+}
+.notes li:last-child { color: var(--ink); }
+.error {
+  margin-top: 1.25rem;
+  max-width: var(--measure);
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--contradicted);
+  background: var(--paper-raised);
+}
+
+/* ---- small parts --------------------------------------------------------- */
+
+.meta {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+.meta-list {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.5rem;
+}
+.summary {
+  margin-top: 1.75rem;
+  max-width: var(--measure);
+  font-size: 1.15rem;
+  text-wrap: pretty;
+}
+.receipt {
+  margin-top: 1.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  max-width: var(--measure);
+  font-size: 1rem;
+}
+details.trace {
+  margin-top: 3rem;
+  max-width: var(--measure);
+  border-top: 1px solid var(--rule);
+  padding-top: 1rem;
+}
+details.trace summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+details.trace ol {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.footer {
+  margin-top: 4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  max-width: calc(var(--measure) + var(--gutter));
+}
+.status-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 1rem 0;
+  font-size: 1rem;
+}
+.status-list .sign { padding-top: 0.1rem; }
+.status-list .sign svg { width: 1.05rem; height: 1.05rem; }
+.legend {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+/* In running prose the stamp is an example, not a verdict: keep it smaller. */
+.legend .stamp {
+  font-size: 1.05rem;
+  margin-right: 0.4rem;
+}
+.test-label {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px dashed var(--unverified);
+  color: var(--unverified);
+  font-size: 0.95rem;
+  border-radius: 3px;
+}
+
+@media (max-width: 34rem) {
+  :root { --gutter: 2.25rem; }
+  body { font-size: 1.0625rem; }
+  .sign { padding-right: 0.6rem; }
+  .sign svg { width: 1.15rem; height: 1.15rem; }
 }

@@ -1,0 +1,10 @@
+# Never upload local secrets — env vars are set on the Vercel project instead.
+.env
+.env.*
+!.env.example
+
+# Local-only
+spikes/
+.claude/
+node_modules/
+.next/

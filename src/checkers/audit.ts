@@ -57,7 +57,14 @@ export function readCertikPage(status: number, html: string): CertikReading {
   if (status !== 200) throw new Error(`CertiK returned HTTP ${status}`);
 
   const at = html.indexOf("Code Audit History");
-  const section = at === -1 ? "" : stripHtml(html.slice(at, at + 12_000)).slice(0, 600);
+  const section =
+    at === -1
+      ? ""
+      : stripHtml(html.slice(at, at + 12_000))
+          .replace(/<[^>]*$/, "") // the slice can cut a tag in half; drop the fragment
+          .split(/Missing Info\?|Token Scan/)[0]! // the rest of the page isn't about audits
+          .trim()
+          .slice(0, 600);
 
   if (html.includes(BADGE)) {
     return { kind: "not-audited", excerpt: section || BADGE };

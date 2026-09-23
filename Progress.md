@@ -114,17 +114,20 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 
 ## Day 4 — Fri Sep 25: UI + Telegram + receipts + deploy
 
-- [ ] `app/page.tsx` — hero, input, 3 example buttons, live trace
-- [ ] `app/r/[id]/page.tsx` — claim cards, stamps, qualifiers, proof links, summary, trace, receipt badge, share
-- [ ] `app/method/page.tsx`
-- [ ] `scripts/register-schema.ts` → run once on Base → `EAS_SCHEMA_UID`
-- [ ] `src/lib/eas.ts` — attest after report; store uid/txHash; "receipt pending" fallback
-- [ ] `app/r/[id]/verify/page.tsx` — recompute hash client-side, compare to on-chain
-- [ ] `src/bot/telegram.ts` + `app/api/telegram/route.ts`; set webhook with secret
-- [ ] `app/api/health/route.ts` + small status panel
-- [ ] Production deploy; set all env vars on Vercel; `maxDuration` on `/api/check`
+- [x] `app/page.tsx` — "scholar's margin" design (Sam's pick): input, live trace as margin notes, labelled test example
+- [x] `app/r/[id]/page.tsx` — claims with margin sigla (※ verified, ÷ contradicted, ? unverified), ink stamps, qualifiers, proof, summary, trace, receipt, share; §15 test label
+- [x] `app/method/page.tsx` — how each claim is checked, the marks, v1 limits, live source status
+- [x] `src/lib/eas.ts` + `anchor.ts` — attest via viem after the response (`after()`), receipt written back to the report; "receipt pending" fallback
+- [x] `scripts/register-schema.ts` — dry-run by default; schema UID `0xd10de7a2…ac4ac05` (not yet registered)
+- [ ] Register schema on Base — **waits on funding** the attester wallet `0x1027Ab454ef4a85271e997957a2a0A12d059F46C` (~$2 ETH on Base), then Sam's OK to send
+- [x] `app/r/[id]/verify/page.tsx` — re-hashes in the browser and reads EAS on Base directly (public RPC allows CORS)
+- [x] `src/bot/telegram.ts` + `app/api/telegram/route.ts` + `scripts/set-webhook.ts` — replies "Checking…", finishes in `after()`, edits the message
+- [ ] Telegram live — **waits on `TELEGRAM_BOT_TOKEN`** from @BotFather
+- [x] `app/api/health/route.ts` + status panel on /method
+- [x] Production deploy — **https://obelus-five.vercel.app**, env vars set (secrets marked sensitive), `maxDuration` 60 on `/api/check` and `/api/telegram`
+- [x] Tests: `eas.test.ts`, `telegram.test.ts` — **162 passing**
 
-**Acceptance:** from an incognito phone browser: paste → report page with stamps → EAS link opens on base.easscan.org → verify page shows ✅ match. `/check` works in the Telegram group.
+**Acceptance:** partly. The site, report and verify pages, API and health panel work in production, and every data source answers from Vercel. The full phone test (paste → report → EAS link → verify ✅) and `/check` in Telegram wait on three things from Sam: Anthropic credit, funding the attester wallet, and a bot token.
 
 ---
 
@@ -230,6 +233,11 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 23 | Lock reads via one Multicall3 call; RPC client retries with backoff | Public Base RPC returns 429 beyond ~5 concurrent requests; batching didn't help |
 | Sep 23 | GitHub-hosted auditor repos not registered | Domain check is by hostname, so `github.com` would let any repo speak for PeckShield or Trail of Bits |
 | Sep 23 | Relative imports without `.js` | Next's webpack can't map `.js` → `.ts`; extensionless works in Next, tsc, tsx and vitest alike |
+| Sep 24 | UI direction "scholar's margin" (Sam's pick) | Verdicts as the ancient critical signs: Origen's asteriskos ※ for text attested by the source, Aristarchus's obelus ÷ for lines that don't hold up. Makes the product's name visible |
+| Sep 24 | EAS via viem, not `@ethereum-attestation-service/eas-sdk` + ethers | One `attest()` call doesn't justify a second web3 stack; viem also runs in the browser for the verify page |
+| Sep 24 | Receipts written in Next's `after()` | The user gets their link without waiting on gas (§11), and the serverless function stays alive until the attestation lands |
+| Sep 24 | Health panel never reports a key as "up" | "Anthropic is answering" was showing while the account had no credit. Anthropic now gets a real 1-token probe; Tavily shows "set up, not called" |
+| Sep 24 | Attester wallet generated locally | Key written straight to .env.local and Vercel (sensitive); only the address was ever printed |
 | Sep 23 | Partner registry limited to a verified top 15, not the ~50 in §9 | Each domain must be visited first, and the partnership checker treats a partner-domain page as proof. Unknown partners return UNVERIFIED, so coverage grows later without any logic change |
 
 ---
@@ -242,7 +250,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | **Team Finance Base locker address not obtainable** | OPEN. `docs.team.finance` does not resolve, and no other official `team.finance` page publishes it. §9 forbids taking it from memory, so it is **not** in the registry. Effect: a Team-Finance-locked LP returns UNVERIFIED `LP_NOT_IN_KNOWN_LOCKER` — correct behaviour, not a false ❌. **To resolve:** open `docs.team.finance` in a normal browser, or open a known Team-Finance-locked Base LP on basescan and read the holder — then add it via `scripts/spike-lockers.ts` so it is code-verified before registration |
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
-| Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | INTERMITTENT — later the same day Binance answered live checks and coinbase.com resolved (32/32 registry domains reachable), so this looks like flaky ISP DNS, not a hard block. OKX still unconfirmed. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
+| Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | RESOLVED Sep 24 — all four direct adapters pass `spike-exchanges-direct.ts` (Binance and OKX shapes, written from docs, confirmed correct), and from Vercel Binance answers in 55 ms, OKX in 251 ms. Earlier note: INTERMITTENT — later the same day Binance answered live checks and coinbase.com resolved (32/32 registry domains reachable), so this looks like flaky ISP DNS, not a hard block. OKX still unconfirmed. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
 | Sep 23 | **Anthropic account has no credit** | OPEN — Sam. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
 | Sep 23 | Sandboxed dev server can't make outbound TLS calls | ENVIRONMENT ONLY. The Claude preview tool runs the server in a sandbox whose TLS interception breaks Upstash and Anthropic ("unable to verify the first certificate"). Run `pnpm start` normally — outside the sandbox everything works |
 | Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
@@ -250,16 +258,18 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 ---
 
 ## Status
-**Current phase:** Day 3 complete — the demo spine works. Day 4 (UI, Telegram, EAS receipts, deploy) next.
+**Current phase:** Day 4 built and deployed — **https://obelus-five.vercel.app**. Three external steps left.
 
-**Done Sep 23:** all six checkers, contract resolution, pipeline, hashing, storage, rate limiting and both
-API routes; 148 tests. First runs against live sources found and fixed four bugs no offline test could
-catch (WEEX never cached, future-tense listings, public-RPC rate limits, TVL name mismatch) — run time
-20.9 s → 7.3 s. Stored reports are served by the API and their hashes recompute to a match.
+**Done Sep 24:** the full web UI (home, report, verify, method + live source status), EAS receipts and
+schema registration, the Telegram bot, the health endpoint, and a production deploy with every data source
+answering from Vercel's network. 162 tests.
 
-**Blocking — Sam:** Anthropic credit (the key authenticates; the org has no balance). It's the only thing
-between here and a full real-announcement run through `/api/check`. Also: Vercel account, an Alchemy
-Base RPC URL, and the Team Finance locker address.
+**Blocking — Sam:**
+1. **Anthropic credit** — still "credit balance is too low". Nothing can be checked live until this lands.
+2. **Fund the attester wallet** `0x1027Ab454ef4a85271e997957a2a0A12d059F46C` with ~$2 of ETH **on Base**;
+   then I register the schema (one transaction, with your OK) and set `EAS_SCHEMA_UID` on Vercel.
+3. **Telegram bot token** from @BotFather (also create the public channel/group the submission needs).
+Also still useful: an Alchemy Base RPC URL; the Team Finance locker address; make the repo public before submitting.
 
-**Next task — build:** Day 4 — `app/page.tsx` (input + live trace), `app/r/[id]` report page, `/method`,
-EAS schema + attestation, verify page, Telegram bot, `/api/health`, deploy.
+**Next task — build:** Day 5 — run Obelus on 15–30 real announcements, pick Examples A and B, README,
+demo video, submission text.

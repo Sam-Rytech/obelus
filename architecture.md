@@ -151,7 +151,7 @@ Obelus is an agent, not a script, because it **plans and adapts per input**:
 | X posts | FxTwitter API (`api.fxtwitter.com`), fallback `publish.twitter.com/oembed` | No API key |
 | TVL | DefiLlama (`api.llama.fi`) | Free, no key |
 | Token/pool lookup | DexScreener public API | Free (verify endpoints in spike) |
-| Receipts | EAS on Base (`@ethereum-attestation-service/eas-sdk` + ethers v6) | EAS predeploy on Base |
+| Receipts | EAS on Base, called with **viem** (Sep 24: the eas-sdk + ethers stack was dropped — one `attest()` call doesn't justify it, and viem also runs in the browser for the verify page) | EAS predeploy on Base |
 | Storage | Upstash Redis (free tier) | Reports, caches, rate limits |
 | Telegram | grammY (webhook mode) | Works on Vercel serverless |
 | Hosting | Vercel (free) | Demo link that just works |

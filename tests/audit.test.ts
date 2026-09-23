@@ -59,6 +59,15 @@ describe("readCertikPage", () => {
     expect(readCertikPage(200, NOT_AUDITED).kind).toBe("not-audited");
   });
 
+  it("never leaks a half-cut HTML tag into the evidence excerpt", () => {
+    // Seen on the first report page: the 12k slice ended mid-tag, leaving '<div class="skeleton-te'.
+    const page = `<h2>Code Audit History</h2><span>Not Audited By CertiK</span> Missing Info? Submit Now` + " ".repeat(12_000 - 90) + `<div class="skeleton-text">`;
+    const r = readCertikPage(200, page);
+    expect(r.kind).toBe("not-audited");
+    expect("excerpt" in r && r.excerpt).not.toMatch(/</);
+    expect("excerpt" in r && r.excerpt).not.toContain("Missing Info");
+  });
+
   it("treats a 404 as no record", () => {
     expect(readCertikPage(404, "").kind).toBe("missing");
   });
