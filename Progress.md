@@ -95,18 +95,20 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 
 ## Day 3 — Thu Sep 24: remaining checkers + pipeline + API
 
-- [ ] `checkers/audit.ts` (§10.2) — CertiK path + other auditors
-- [ ] `checkers/partnership.ts` (§10.5) — partner-domain rule, never CONTRADICTED
-- [ ] `checkers/tvl.ts` (§10.6)
-- [ ] `checkers/lock.ts` (§10.4) — v2-style LP only
-- [ ] `resolve.ts` — contract resolution via DexScreener when missing; normalization via registries
-- [ ] `pipeline.ts` — parallel checks, budget (12 calls), timeouts (8 s/call), fail-closed
-- [ ] `hash.ts` — canonical JSON + keccak256
-- [ ] `app/api/check/route.ts` — SSE trace stream → `{ reportId }`; store report in Redis; rate limit 10/IP/h
-- [ ] `app/api/report/[id]/route.ts`
-- [ ] Tests for audit, partnership, tvl, lock, hash
+- [x] `checkers/audit.ts` (§10.2) — CertiK by direct slug (VERIFIED needs "N Audits available", N ≥ 1) with name-matched Tavily fallback; 10 more auditors via search, requiring audit wording (a hack post-mortem must not verify)
+- [x] `checkers/partnership.ts` (§10.5) — name + partnership wording in the same sentence, `MENTION_ONLY` otherwise, never CONTRADICTED
+- [x] `checkers/tvl.ts` (§10.6) — `/tvl/<slug>`, floor wording, name variants that can verify but not contradict
+- [x] `checkers/lock.ts` (§10.4) — v2-style LP only, one Multicall3 read
+- [x] `resolve.ts` — DexScreener resolution only when unambiguous; resolved contracts can't produce `DIFFERENT_TOKEN_SAME_TICKER`
+- [x] `pipeline.ts` — parallel checks, 12-call budget, per-claim 20 s timeout, every claim guaranteed a result
+- [x] `hash.ts` — canonical JSON + keccak256, isomorphic for the verify page
+- [x] `summary.ts` — built by code from results (deviation from §5, see Decision log)
+- [x] `store.ts`, `ratelimit.ts` — Upstash, 90-day report TTL, 10 checks/IP/hour
+- [x] `app/api/check/route.ts` — SSE trace stream → `{ reportId }`
+- [x] `app/api/report/[id]/route.ts` — 400 bad id / 404 missing / 503 storage down
+- [x] Tests for audit, partnership, tvl, lock, hash, pipeline, resolve, summary — **148 passing**
 
-**Acceptance:** `curl -N -X POST /api/check` with a real announcement streams the trace and returns a report id; `GET /api/report/<id>` returns valid JSON. **Checkpoint: this is the demo spine. If it isn't working by end of Day 3, cut lock + TVL and move on.**
+**Acceptance:** ✅ with one exception. `curl -N -X POST /api/check` streams the trace and returns clean error events (SSRF refused, bad input rejected); `GET /api/report/<id>` serves a stored report whose hash recomputes to a match. The *full* real-announcement run through `/api/check` waits on Anthropic credit — the same pipeline runs end to end with `pnpm fixture fixtures/sample1.txt --offline --save` (8 claims, 8/12 source calls, 7.3 s).
 
 ---
 
@@ -216,6 +218,18 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 23 | Extractor discards a contract address not present in the source text | §3 forbids the model inventing a source. An unquoted address would silently redirect every on-chain checker to the wrong contract |
 | Sep 23 | `allowBuilds` in `pnpm-workspace.yaml`: only esbuild allowed | pnpm 11 had written unanswered placeholders there, which made **every `pnpm <script>` fail** — including `pnpm typecheck` and `pnpm test`. Default-deny: keccak, secp256k1 and bufferutil have pure-JS fallbacks and would need a C++ toolchain; ccxt's postinstall isn't needed |
 | Sep 23 | `pnpm fixture` / `pnpm spike` load `.env.local` via `node --env-file-if-exists` | tsx doesn't read `.env.local` (only Next.js does), so the scripts ran as if no keys were set. `-if-exists` keeps a fresh clone working |
+| Sep 23 | **Partnership = name + partnership wording in one sentence** (Sam's call) | Every Aave hit on chain.link was a price-feed page; name-on-domain would verify "partnered with Chainlink" for any token with a feed |
+| Sep 23 | Same rule for non-CertiK auditors (audit wording, negation guard) | An auditor's blog names projects most often in hack post-mortems — name-on-domain would stamp "audited" ✅ on exploited projects |
+| Sep 23 | CertiK VERIFIED requires "N Audits available", N ≥ 1 | The count is a positive signal; the old "badge absent + heading present" rule would verify any page that failed to render the badge |
+| Sep 23 | Future-tense listing claims always UNVERIFIED `FUTURE_CLAIM` | Spec'd in §10.1 but missed in Day 2; the live run stamped "will be listed on Binance" ✅, and against MEXC's exhaustive list it would have been ❌ |
+| Sep 23 | Inferred (resolved) contracts and shortened-name TVL matches can verify but never contradict | Both are Obelus's own guesses; a mismatch may be our wrong pick, not the project's lie |
+| Sep 23 | Resolution never picks "highest liquidity" among same-ticker tokens | That heuristic is exactly how a well-funded clone would get chosen |
+| Sep 23 | Summary built by code, not the LLM (deviation from §5) | §8 forbids verdicts in the summary that aren't in results; code guarantees it, a prompt can't. Halves model calls per report |
+| Sep 23 | Tavily timeout 12 s, per-claim cap 20 s (deviation from §18's 8 s) | Tavily measured 6–11 s from Lagos; checks run in parallel so the pipeline still fits 60 s |
+| Sep 23 | Cache only the fields checkers read | Upstash caps values at 1 MB; WEEX's raw 1.7 MB list failed to cache on every request and made WEEX time out |
+| Sep 23 | Lock reads via one Multicall3 call; RPC client retries with backoff | Public Base RPC returns 429 beyond ~5 concurrent requests; batching didn't help |
+| Sep 23 | GitHub-hosted auditor repos not registered | Domain check is by hostname, so `github.com` would let any repo speak for PeckShield or Trail of Bits |
+| Sep 23 | Relative imports without `.js` | Next's webpack can't map `.js` → `.ts`; extensionless works in Next, tsc, tsx and vitest alike |
 | Sep 23 | Partner registry limited to a verified top 15, not the ~50 in §9 | Each domain must be visited first, and the partnership checker treats a partner-domain page as proof. Unknown partners return UNVERIFIED, so coverage grows later without any logic change |
 
 ---
@@ -228,31 +242,24 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | **Team Finance Base locker address not obtainable** | OPEN. `docs.team.finance` does not resolve, and no other official `team.finance` page publishes it. §9 forbids taking it from memory, so it is **not** in the registry. Effect: a Team-Finance-locked LP returns UNVERIFIED `LP_NOT_IN_KNOWN_LOCKER` — correct behaviour, not a false ❌. **To resolve:** open `docs.team.finance` in a normal browser, or open a known Team-Finance-locked Base LP on basescan and read the holder — then add it via `scripts/spike-lockers.ts` so it is code-verified before registration |
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
-| Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | OPEN, mitigated. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
+| Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | INTERMITTENT — later the same day Binance answered live checks and coinbase.com resolved (32/32 registry domains reachable), so this looks like flaky ISP DNS, not a hard block. OKX still unconfirmed. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
 | Sep 23 | **Anthropic account has no credit** | OPEN — Sam. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
+| Sep 23 | Sandboxed dev server can't make outbound TLS calls | ENVIRONMENT ONLY. The Claude preview tool runs the server in a sandbox whose TLS interception breaks Upstash and Anthropic ("unable to verify the first certificate"). Run `pnpm start` normally — outside the sandbox everything works |
 | Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
 
 ---
 
 ## Status
-**Current phase:** Day 2 complete (ingest + extraction + listing & ownership checkers). Day 0 keys still partly outstanding.
+**Current phase:** Day 3 complete — the demo spine works. Day 4 (UI, Telegram, EAS receipts, deploy) next.
 
-**Done Sep 23:** direct-REST exchange adapters replacing CCXT (spiked first); ingest for text/URL/X with
-a full SSRF guard; the LLM adapter and extractor with the quote guard; WEEX, BingX and direct listing
-checkers over one shared pure verdict function; the ownership checker with EIP-1967 proxy detection;
-`run-fixture.ts`; partner registry (top 15, domains verified live); **68 tests passing**, typecheck green.
-Running the fixture found and fixed a real bug: an unreachable source was being reported as "no market",
-which against MEXC's exhaustive list would have produced a false ❌.
+**Done Sep 23:** all six checkers, contract resolution, pipeline, hashing, storage, rate limiting and both
+API routes; 148 tests. First runs against live sources found and fixed four bugs no offline test could
+catch (WEEX never cached, future-tense listings, public-RPC rate limits, TVL name mismatch) — run time
+20.9 s → 7.3 s. Stored reports are served by the API and their hashes recompute to a match.
 
+**Blocking — Sam:** Anthropic credit (the key authenticates; the org has no balance). It's the only thing
+between here and a full real-announcement run through `/api/check`. Also: Vercel account, an Alchemy
+Base RPC URL, and the Team Finance locker address.
 
-**Done Sep 22:** repo scaffolded in place (Next.js 15, Tailwind v4, root `app/` + `src/` per §17);
-all nine no-key spikes written, run and passing; `architecture.md` §4, §7, §10.1, §10.2, §10.4, §10.6, §20
-corrected from what the spikes actually measured; `schema.ts`, `trace.ts`, `budget.ts`, `cache.ts`;
-registries with Zod validation and 9 passing tests. `pnpm typecheck` and `pnpm test` both green.
-
-**Next task — Sam:** `ANTHROPIC_API_KEY` is now the one thing blocking a real end-to-end run (Tavily key
-obtained; put it in `.env.local`). Also: Vercel account, Upstash, and the Team Finance locker address.
-
-**Next task — build:** Day 3 — `audit.ts`, `partnership.ts`, `tvl.ts`, `lock.ts`, `resolve.ts`,
-`pipeline.ts`, `hash.ts`, and the `/api/check` SSE route. All buildable without Anthropic; only live
-extraction needs it.
+**Next task — build:** Day 4 — `app/page.tsx` (input + live trace), `app/r/[id]` report page, `/method`,
+EAS schema + attestation, verify page, Telegram bot, `/api/health`, deploy.

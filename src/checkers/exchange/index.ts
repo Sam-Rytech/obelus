@@ -6,12 +6,12 @@
  * error: it returns UNVERIFIED EXCHANGE_NOT_SUPPORTED, because we have no primary
  * source for it and absence of a source is never disproof (§3).
  */
-import { findExchange } from "../../registry/index.js";
-import { REASON, type Claim, type Project } from "../../lib/schema.js";
-import { result, type Ctx } from "../types.js";
-import { checkBingx } from "./bingx.js";
-import { DIRECT_EXCHANGES, makeDirectChecker } from "./direct.js";
-import { checkWeex } from "./weex.js";
+import { findExchange } from "../../registry/index";
+import { REASON, type Claim, type Project } from "../../lib/schema";
+import { result, type Ctx } from "../types";
+import { checkBingx } from "./bingx";
+import { DIRECT_EXCHANGES, makeDirectChecker } from "./direct";
+import { checkWeex } from "./weex";
 
 export async function checkExchangeListing(claim: Claim, project: Project, ctx: Ctx) {
   const name = typeof claim.params.exchange === "string" ? claim.params.exchange : "";

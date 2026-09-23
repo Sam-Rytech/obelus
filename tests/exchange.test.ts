@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { decideListing, type MarketLookup } from "../src/checkers/exchange/market.js";
-import type { Claim } from "../src/lib/schema.js";
+import { decideListing, type MarketLookup } from "../src/checkers/exchange/market";
+import type { Claim } from "../src/lib/schema";
 
 const claim: Claim = {
   id: "c1",
@@ -49,6 +49,14 @@ describe("live market, contract identity", () => {
     const r = decideListing(claim, lookup({ contractOnBase: OTHER }), AERO);
     expect(r.verdict).toBe("CONTRADICTED");
     expect(r.reason).toContain("DIFFERENT_TOKEN_SAME_TICKER");
+  });
+
+  it("does NOT stamp ❌ when the mismatched contract was inferred by Obelus", () => {
+    // resolve.ts may pick a same-ticker clone; that is our guess failing, not the
+    // project lying. Only a contract the announcement STATED can be contradicted.
+    const r = decideListing(claim, lookup({ contractOnBase: OTHER }), AERO, [], "resolved");
+    expect(r.verdict).toBe("UNVERIFIED");
+    expect(r.reason).not.toContain("DIFFERENT_TOKEN_SAME_TICKER");
   });
 
   it("VERIFIED but qualified when the exchange publishes no contract", () => {
@@ -116,6 +124,25 @@ describe("status gate", () => {
       );
       expect(r.verdict).not.toBe("VERIFIED");
     }
+  });
+});
+
+describe("future-tense claims", () => {
+  const future: Claim = { ...claim, quote: "will be listed on MEXC next month", params: { exchange: "MEXC", tense: "future" } };
+
+  it("is never CONTRADICTED by absence, even from an exhaustive list", () => {
+    // Absence is exactly what a genuine upcoming listing looks like.
+    const r = decideListing(future, lookup({ exchangeLabel: "MEXC", market: null, listIsExhaustive: true }), undefined);
+    expect(r.verdict).toBe("UNVERIFIED");
+    expect(r.reason).toContain("FUTURE_CLAIM");
+    expect(r.qualifier).toContain("Not on MEXC yet");
+  });
+
+  it("is not VERIFIED either — and says when the market already trades", () => {
+    // The live-run bug: "AERO will be listed on Binance next month" came back ✅.
+    const r = decideListing(future, lookup({ contractOnBase: AERO }), AERO);
+    expect(r.verdict).toBe("UNVERIFIED");
+    expect(r.qualifier).toContain("Already trading on WEEX");
   });
 });
 

@@ -5,7 +5,7 @@
  * Finding (Sep 22): /latest/dex/search returns chainId, dexId, pairAddress,
  * baseToken.address, liquidity — everything both callers need.
  */
-import { getJson, save, h, expect, done } from "./_spike.js";
+import { getJson, save, h, expect, done } from "./_spike";
 
 const SEARCH = "https://api.dexscreener.com/latest/dex/search?q=";
 const TOKEN_PAIRS = "https://api.dexscreener.com/token-pairs/v1/base/";

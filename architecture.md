@@ -112,7 +112,7 @@ Deadline: **Sep 27, 2026, 23:59 UTC** (= Sep 28, 00:59 Lagos time). Target submi
                    ▼
         ┌───────────────────────┐
    5    │  REPORT               │  canonical JSON → keccak256 reportHash
-        │                       │  LLM writes plain-English summary (no verdicts)
+        │                       │  summary built by code from results (see below)
         └──────────┬────────────┘
                    ▼
         ┌───────────────────────┐
@@ -120,6 +120,11 @@ Deadline: **Sep 27, 2026, 23:59 UTC** (= Sep 28, 00:59 Lagos time). Target submi
         │                       │  store report in Redis → /r/[id]
         └───────────────────────┘
 ```
+
+**Summary (deviation, Sep 23):** step 5's plain-English summary is built by code from `results`
+(`src/lib/summary.ts`), not written by the LLM. §8 requires it to contain no verdict absent from
+`results`, which no prompt can guarantee of free text; built from the results it is correct by
+construction, and each report costs one model call (extraction) instead of two.
 
 ### Where the "agent" is
 Obelus is an agent, not a script, because it **plans and adapts per input**:
@@ -342,9 +347,16 @@ enough: 1,581 of BingX's 2,271 spot symbols are delisted entries that are still 
      near-misses like `BASEDAI` cannot slip through.
    - **The contract-confirmable set is small everywhere** (WEEX 42, gate 154, kucoin 79, bitget 66), so the
      qualified ✅ is the common case, not the exception. The UI must make the two visually distinct.
-7. Edge: the extractor marks `params.tense = "future"` for "will list" wording; combined with the status
-   gate, a future claim about a `status: 10` market returns UNVERIFIED `FUTURE_CLAIM` with both signals in
-   the evidence.
+7. **Future tense** (`params.tense = "future"`, "will list"): always UNVERIFIED `FUTURE_CLAIM`, whatever
+   the market list says, with today's status in the qualifier ("Not on MEXC yet" / "Already trading on
+   Binance"). A future listing can't be confirmed, and absence is exactly what a genuine upcoming listing
+   looks like — so this is checked *before* the exhaustive-list rule, which would otherwise return ❌.
+   Found in the first live run (Sep 23): "AERO will be listed on Binance" came back ✅.
+8. **Inferred contracts can't contradict.** If the announcement stated no contract and Obelus resolved
+   one via DexScreener (`project.contractSource = "resolved"`), a mismatch with the exchange's address is
+   UNVERIFIED, not `DIFFERENT_TOKEN_SAME_TICKER` — the mismatch may be Obelus having picked a same-ticker
+   clone. Resolution itself only proceeds when exactly one Base token matches the ticker, or exactly one
+   also matches the project name; it never picks by highest liquidity.
 
 ### 10.2 AUDIT
 1. Resolve auditor via registry. Unknown → UNVERIFIED `AUDITOR_NOT_IN_REGISTRY`.
@@ -363,7 +375,8 @@ enough: 1,581 of BingX's 2,271 spot symbols are delisted entries that are still 
    |---|---|
    | **HTTP 404** — no such project | UNVERIFIED `NO_AUDITOR_RECORD_FOUND` (no parsing needed) |
    | 200 containing `Not Audited By CertiK` | **CONTRADICTED** `AUDITOR_PAGE_SAYS_NOT_AUDITED` |
-   | 200, no badge, `Code Audit History` present | **VERIFIED** (evidence: Skynet URL + audit-history section text) |
+   | 200, no badge, **"N Audits available" with N ≥ 1** | **VERIFIED** (evidence: Skynet URL + audit-history section text, incl. "Last Audit was delivered on …") |
+   | 200, neither badge nor an audit count | UNVERIFIED `SOURCE_ERROR:certik` — unreadable, fail closed |
    | any other status | UNVERIFIED `SOURCE_ERROR:certik` (fail closed, §18) |
 
    Verified against `pancakeswap` and `polygon` (audited → no badge), `uniswap` and `aerodrome-finance`
@@ -371,10 +384,18 @@ enough: 1,581 of BingX's 2,271 spot symbols are delisted entries that are still 
 
    Audit titles are **not** present in the HTML as links or PDF URLs, so the Evidence `excerpt` must be the
    text of the audit-history section — don't build the checker expecting report links.
-3. **Other auditors:** Tavily search `"<project name>" audit` restricted to the auditor's domains.
-   - Result on an auditor-controlled domain whose content contains the project name (exact, case-insensitive)
-     → **VERIFIED**.
+3. **Other auditors** (Hacken, SlowMist, OpenZeppelin, Quantstamp, Halborn, Cyfrin, Zellic, Trail of Bits,
+   Code4rena, Sherlock — domains verified live Sep 23): Tavily search `"<project name>" audit` restricted to
+   the auditor's domains.
+   - A sentence on an auditor-controlled domain naming the project (whole word, case-insensitive) **and**
+     using audit language (`audit`, `security review`, `security assessment`), without negating it
+     ("not audited", "unaudited", "without an audit") → **VERIFIED**.
+   - Named, but not in audit terms → UNVERIFIED `MENTION_ONLY`, page linked. An auditor's blog most often
+     names a project in a *hack post-mortem*; name-on-domain alone would stamp "audited" ✅ on exactly the
+     projects that got exploited. Same rule as partnerships (§10.5).
    - Otherwise UNVERIFIED `NO_AUDITOR_RECORD_FOUND`.
+   - GitHub-hosted report repos (PeckShield, Trail of Bits' `publications`) are **not** registered: the
+     domain check is by hostname, so `github.com` would let any repository speak for the auditor.
 4. A PDF hosted on the **project's own site** never counts.
 5. Qualifier on every VERIFIED audit: `Report exists — v1 does not confirm which contract it covered`.
 
@@ -414,11 +435,17 @@ Needs `project.contract`.
 ### 10.5 PARTNERSHIP
 1. Resolve partner via registry. Unknown → UNVERIFIED `PARTNER_NOT_IN_REGISTRY`.
 2. Tavily search `"<project name>"` with `include_domains: partner.domains`.
-3. Rules:
-   - A partner-domain page contains the project name (exact, case-insensitive) → **VERIFIED**
-     (evidence: that page + excerpt). The LLM may label the excerpt's context ("partnership" vs "mention"),
-     shown to the user, but the verdict rule is the string match on a partner-controlled domain.
-   - Otherwise → UNVERIFIED `NO_PARTNER_CONFIRMATION`. **Never CONTRADICTED** (absence isn't proof).
+3. Rules (tightened Sep 23 — decided with Sam):
+   - A **sentence** on a partner-domain page contains the project name (whole word, case-insensitive)
+     **and** partnership language (`partner`/`partnership`/`collaborat*`/`integrat*`/`join forces`)
+     → **VERIFIED** (evidence: that page + that sentence). Code decides via the fixed keyword list.
+   - The name appears on the partner's site but never in partnership terms → UNVERIFIED `MENTION_ONLY`,
+     page still linked. Why: every Tavily hit for "Aave" on `chain.link` was a Chainlink *price-feed* page,
+     so the original name-match rule would have verified "partnered with Chainlink" for any token with a
+     feed.
+   - Name absent → UNVERIFIED `NO_PARTNER_CONFIRMATION`. **Never CONTRADICTED** (absence isn't proof).
+   - Tavily returns results even for projects that don't exist (5 for a fabricated name), so the name is
+     always matched in the content — result count means nothing.
 
 ### 10.6 TVL
 1. Try `https://api.llama.fi/tvl/<slug>` first (slug = normalized project name). It returns the bare
@@ -428,6 +455,13 @@ Needs `project.contract`.
    `/protocols` (8,325 entries), reduced to a name→slug map and cached 24 h, then retry `/tvl`.
 3. Rules: within ±25% of claimed → **VERIFIED**; outside → **CONTRADICTED** (show actual); not listed → UNVERIFIED `NOT_ON_DEFILLAMA`.
    Qualifier includes DefiLlama's current number and fetch time (claims can be dated).
+   - **Floor wording** ("crossed", "over", "more than", "surpassed", …, fixed list): the claim is a lower
+     bound, so current TVL ≥ 75% of it is VERIFIED. "TVL has crossed $4M" is true of $40M.
+   - **Name variants:** the full name is tried first, then without a generic suffix (finance, protocol,
+     labs, network, exchange, dao, app) — "Aerodrome Finance" is DefiLlama's `aerodrome`. A match through a
+     *shortened* name may VERIFY but never CONTRADICT (UNVERIFIED, "name match uncertain"): DefiLlama's
+     "Nova" may be a different protocol from "Nova Finance".
+   - DefiLlama unreachable → UNVERIFIED `SOURCE_ERROR`, never `NOT_ON_DEFILLAMA`.
 4. Evidence URL: `https://defillama.com/protocol/<slug>`.
 
 ### 10.7 OTHER
@@ -435,7 +469,10 @@ Shown in the report with verdict UNVERIFIED `NOT_CHECKABLE_V1` — transparency 
 
 ## 11. Receipts (EAS on Base)
 
-- **Canonical JSON:** the Report object without `attestation`, keys sorted, no whitespace → `keccak256` → `reportHash`.
+- **Canonical JSON:** the Report object without `attestation` **and without `reportHash` itself**, keys sorted
+  at every depth, no whitespace, undefined fields dropped, array order kept → `keccak256` → `reportHash`.
+  Hashed *after* Zod parsing, so it matches exactly what is stored and served. Implemented isomorphically
+  in `src/lib/hash.ts` (viem only) so the verify page runs the same code in the browser.
 - **Schema** (register once with a script):
   `bytes32 reportHash, string reportUrl, uint8 verified, uint8 contradicted, uint8 unverified, string engineVersion`
 - **Attest** from a dedicated server wallet (small ETH on Base, key in env). Non-revocable, no recipient.
@@ -559,6 +596,13 @@ obelus/
 - **Fail closed:** any checker error → UNVERIFIED with reason `SOURCE_ERROR:<name>`, never a guess.
 - **No secrets client-side.** All upstream calls happen server-side.
 - **Timeouts:** every external call ≤ 8 s; whole pipeline ≤ 60 s (Vercel limit — set `maxDuration`).
+  Two measured exceptions: Tavily searches get 12 s (6–11 s measured from Lagos; checks run in parallel,
+  so it still fits), and each claim's whole check is capped at 20 s, after which it is UNVERIFIED.
+- **Public Base RPC** rate-limits at ~5 concurrent requests (`429 over rate limit`; JSON-RPC batching
+  doesn't help). Reads are collapsed into Multicall3 where possible and retried with backoff; production
+  should set an Alchemy URL in `BASE_RPC_URL`.
+- **Cache values stay small:** Upstash caps a value at 1 MB, so large source lists (WEEX 1.7 MB, BingX
+  670 KB, DefiLlama 8.9 MB) are reduced to the fields the checkers read before caching.
 - **Attester wallet** holds only a few dollars of ETH.
 
 ## 19. Submission (Orion requirements)

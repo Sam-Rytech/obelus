@@ -16,8 +16,8 @@
  */
 import { z } from "zod";
 
-import { Claim, ClaimParams, ClaimType, EvmAddress, Project } from "./schema.js";
-import type { Llm } from "./llm.js";
+import { Claim, ClaimParams, ClaimType, EvmAddress, Project } from "./schema";
+import type { Llm } from "./llm";
 
 /** Delimiter for untrusted input. Stated to the model as data, never instructions. */
 const OPEN = "<<<ANNOUNCEMENT>>>";
@@ -176,11 +176,13 @@ export function applyGuards(raw: string, sourceText: string): ExtractionResult {
     });
   }
 
+  const contract = normalizeContract(parsed.project.contract, sourceText);
   return {
     project: Project.parse({
       name: parsed.project.name?.trim() || undefined,
       ticker: normalizeTicker(parsed.project.ticker),
-      contract: normalizeContract(parsed.project.contract, sourceText),
+      contract,
+      contractSource: contract ? "stated" : undefined,
       chain: "base",
     }),
     claims,

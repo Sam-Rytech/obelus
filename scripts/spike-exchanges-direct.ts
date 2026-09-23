@@ -19,7 +19,7 @@
  * binance/bybit/okx/mexc return no currency networks), so every VERIFIED here carries
  * the "contract unconfirmed" qualifier — same as BingX.
  */
-import { save, h, expect, done, UA } from "./_spike.js";
+import { save, h, expect, done, UA } from "./_spike";
 
 type Probe = {
   id: string;

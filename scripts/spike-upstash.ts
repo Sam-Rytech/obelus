@@ -10,8 +10,8 @@
  */
 import { Redis } from "@upstash/redis";
 
-import { cache, cached, resetCacheForTests, usingRedis } from "../src/lib/cache.js";
-import { h, expect, done } from "./_spike.js";
+import { cache, cached, resetCacheForTests, usingRedis } from "../src/lib/cache";
+import { h, expect, done } from "./_spike";
 
 async function main() {
   resetCacheForTests();

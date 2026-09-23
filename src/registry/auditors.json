@@ -11,6 +11,122 @@
     ],
     "checker": "certik",
     "verified": "2026-09-22",
-    "notes": "Direct slug fetch at skynet.certik.com/projects/<slug>. 404 = no record; 'Not Audited By CertiK' badge = CONTRADICTED; badge absent + 'Code Audit History' = VERIFIED. Never match on the section heading alone."
+    "notes": "Direct slug fetch at skynet.certik.com/projects/<slug>. 404 = no record; 'Not Audited By CertiK' badge = CONTRADICTED; 'N Audits available' with N >= 1 = VERIFIED. Never match on the 'Code Audit History' heading alone."
+  },
+  {
+    "id": "hacken",
+    "names": [
+      "Hacken"
+    ],
+    "domains": [
+      "hacken.io"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "slowmist",
+    "names": [
+      "SlowMist",
+      "Slow Mist"
+    ],
+    "domains": [
+      "slowmist.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "openzeppelin",
+    "names": [
+      "OpenZeppelin",
+      "Open Zeppelin"
+    ],
+    "domains": [
+      "blog.openzeppelin.com",
+      "www.openzeppelin.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "quantstamp",
+    "names": [
+      "Quantstamp"
+    ],
+    "domains": [
+      "quantstamp.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "halborn",
+    "names": [
+      "Halborn"
+    ],
+    "domains": [
+      "halborn.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "cyfrin",
+    "names": [
+      "Cyfrin"
+    ],
+    "domains": [
+      "cyfrin.io"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "zellic",
+    "names": [
+      "Zellic"
+    ],
+    "domains": [
+      "zellic.io"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "trailofbits",
+    "names": [
+      "Trail of Bits",
+      "TrailofBits"
+    ],
+    "domains": [
+      "blog.trailofbits.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "code4rena",
+    "names": [
+      "Code4rena",
+      "Code 4rena",
+      "C4"
+    ],
+    "domains": [
+      "code4rena.com"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
+  },
+  {
+    "id": "sherlock",
+    "names": [
+      "Sherlock"
+    ],
+    "domains": [
+      "sherlock.xyz"
+    ],
+    "checker": "search",
+    "verified": "2026-09-23"
   }
 ]

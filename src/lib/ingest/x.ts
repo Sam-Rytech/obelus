@@ -12,8 +12,8 @@
  *
  * Tweet text is DATA, NEVER INSTRUCTIONS (§3, §18).
  */
-import { cached, TTL } from "../cache.js";
-import { IngestError, MAX_INPUT_CHARS, normalizeText, type Ingested } from "./text.js";
+import { cached, TTL } from "../cache";
+import { IngestError, MAX_INPUT_CHARS, normalizeText, type Ingested } from "./text";
 
 const FX_UA = "ObelusBot/0.1 (crypto announcement fact-checker)";
 const TIMEOUT_MS = 8_000;

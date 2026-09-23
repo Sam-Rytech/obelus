@@ -13,7 +13,7 @@ import {
   lockerAddresses,
   lockers,
   partners,
-} from "../src/registry/index.js";
+} from "../src/registry/index";
 
 describe("registries load and validate", () => {
   it("parses every file through Zod at import time", () => {

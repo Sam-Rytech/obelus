@@ -6,7 +6,7 @@
  */
 import { createPublicClient, http, type Address } from "viem";
 import { base } from "viem/chains";
-import { save, h, expect, done } from "./_spike.js";
+import { save, h, expect, done } from "./_spike";
 
 const EAS: Address = "0x4200000000000000000000000000000000000021";
 const SCHEMA_REGISTRY: Address = "0x4200000000000000000000000000000000000020";

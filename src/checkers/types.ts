@@ -7,15 +7,21 @@
  *   - It attaches the evidence that decided it: URL, fetched excerpt, timestamp.
  *   - On any error it returns UNVERIFIED, never a guess (§18 fail-closed).
  */
-import type { Budget } from "../lib/budget.js";
-import type { CheckResult, Claim, Evidence, Project, Verdict } from "../lib/schema.js";
-import type { Trace } from "../lib/trace.js";
+import type { PublicClient } from "viem";
+
+import { BudgetExhaustedError, type Budget } from "../lib/budget";
+import type { Searcher } from "../lib/search";
+import type { CheckResult, Claim, Evidence, Project, Verdict } from "../lib/schema";
+import type { Trace } from "../lib/trace";
 
 export type Ctx = {
   budget: Budget;
   trace: Trace;
   /** Per-call timeout in ms. §18 caps every external call at 8 s. */
   timeoutMs: number;
+  /** Injected in tests; created lazily from env otherwise. */
+  search?: Searcher;
+  rpc?: PublicClient;
 };
 
 export type Checker = (claim: Claim, project: Project, ctx: Ctx) => Promise<CheckResult>;
@@ -47,8 +53,41 @@ export function result(
  * report. §18: fail closed — a source we could not read is not evidence of anything.
  */
 export function failClosed(name: string, claim: Claim, err: unknown): CheckResult {
+  // Running out of budget is not a source failure, and the report should say which.
+  if (err instanceof BudgetExhaustedError) {
+    return result(
+      claim,
+      "UNVERIFIED",
+      `BUDGET_EXHAUSTED — the ${err.limit}-call budget for this report ran out before ${name} could be checked`,
+      [],
+      "Not checked: budget exhausted",
+    );
+  }
   const message = err instanceof Error ? err.message : String(err);
   return result(claim, "UNVERIFIED", `SOURCE_ERROR:${name} — ${message.slice(0, 160)}`, []);
+}
+
+/**
+ * Fetch text with a timeout. A non-2xx is returned (with its status), not thrown,
+ * because for several sources a 404 is a meaningful answer — CertiK's "no such
+ * project" is exactly that. Transport failures still throw and fail closed.
+ */
+export async function getText(
+  url: string,
+  ctx: Ctx,
+  init?: RequestInit,
+): Promise<{ status: number; body: string }> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      // Some upstreams (CertiK) serve differently to non-browser agents.
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+      ...init?.headers,
+    },
+    signal: AbortSignal.timeout(ctx.timeoutMs),
+  });
+  return { status: res.status, body: await res.text() };
 }
 
 /** Fetch JSON with a timeout and no ambient credentials. */

@@ -13,10 +13,10 @@
  * Do NOT use v2/public/products: it returns bare strings ("MRVLONUSDT_SPBL") with no
  * base/quote separator, so ticker matching is undecidable.
  */
-import { cached, TTL } from "../../lib/cache.js";
-import type { Claim, Project } from "../../lib/schema.js";
-import { decideListing, type MarketLookup } from "./market.js";
-import { evidence, failClosed, getJson, type Ctx } from "../types.js";
+import { cached, TTL } from "../../lib/cache";
+import type { Claim, Project } from "../../lib/schema";
+import { decideListing, type MarketLookup } from "./market";
+import { evidence, failClosed, getJson, type Ctx } from "../types";
 
 const EXCHANGE_INFO = "https://api-spot.weex.com/api/v3/exchangeInfo";
 const COINS = "https://api-spot.weex.com/api/v3/coins";
@@ -35,10 +35,18 @@ function toState(status: string): "live" | "delisted" | "unknown" {
 }
 
 async function loadMarkets(ctx: Ctx): Promise<WeexMarket[]> {
-  return cached("weex:markets", TTL.EXCHANGE_SYMBOLS, async () => {
+  return cached("weex:markets:v2", TTL.EXCHANGE_SYMBOLS, async () => {
     ctx.budget.spend("weex:exchangeInfo");
     const body = await getJson<{ symbols: WeexMarket[] }>(EXCHANGE_INFO, ctx);
-    return body.symbols ?? [];
+    // Keep only the four fields used. The full response is ~1.7 MB, over Upstash's
+    // 1 MB value cap: caching it raw failed silently and slowly on every request, so
+    // WEEX was never actually cached (found in the first live run, Sep 23).
+    return (body.symbols ?? []).map(({ symbol, baseAsset, quoteAsset, status }) => ({
+      symbol,
+      baseAsset,
+      quoteAsset,
+      status,
+    }));
   });
 }
 
@@ -66,7 +74,9 @@ export async function checkWeex(claim: Claim, project: Project, ctx: Ctx) {
       return failClosed("weex", claim, new Error("No ticker was extracted from the announcement"));
     }
 
-    const markets = await loadMarkets(ctx);
+    // Fetch both lists at once: sequentially they took >20 s cold from Lagos. The
+    // contract map is small once reduced, so fetching it speculatively is cheap.
+    const [markets, contracts] = await Promise.all([loadMarkets(ctx), loadBaseContracts(ctx)]);
     const matches = markets.filter((m) => m.baseAsset?.toUpperCase() === ticker);
     // Prefer a live market: a token can have both a TRADING and a HALT pair.
     const market = matches.find((m) => m.status === "TRADING") ?? matches[0];
@@ -83,7 +93,6 @@ export async function checkWeex(claim: Claim, project: Project, ctx: Ctx) {
 
     let contractOnBase: string | null = null;
     if (market) {
-      const contracts = await loadBaseContracts(ctx);
       contractOnBase = contracts[ticker] ?? null;
       if (contractOnBase) {
         ev.push(
@@ -117,7 +126,7 @@ export async function checkWeex(claim: Claim, project: Project, ctx: Ctx) {
         : `WEEX: no market for ${ticker}`,
     );
 
-    return decideListing(claim, lookup, project.contract, ev);
+    return decideListing(claim, lookup, project.contract, ev, project.contractSource);
   } catch (err) {
     return failClosed("weex", claim, err);
   }

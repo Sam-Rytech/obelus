@@ -10,8 +10,8 @@
  *
  * Prints a row per domain and exits non-zero if any registered domain is unreachable.
  */
-import { auditors, partners } from "../src/registry/index.js";
-import { save, h, UA } from "./_spike.js";
+import { auditors, partners } from "../src/registry/index";
+import { save, h, UA } from "./_spike";
 
 type Row = { owner: string; domain: string; status: number | string; finalHost: string; ok: boolean };
 

@@ -13,8 +13,8 @@
 import { createPublicClient, http, getAddress, type Address, type PublicClient } from "viem";
 import { base } from "viem/chains";
 
-import { REASON, type Claim, type Project } from "../lib/schema.js";
-import { evidence, failClosed, result, type Ctx } from "./types.js";
+import { REASON, type Claim, type Project } from "../lib/schema";
+import { evidence, failClosed, result, type Ctx } from "./types";
 
 /** EIP-1967 storage slots — architecture §10.3 step 2. */
 const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc" as const;
@@ -44,10 +44,19 @@ function addressFromSlot(word: string | undefined): string | null {
   return addr === ZERO ? null : addr;
 }
 
+/**
+ * Measured Sep 23: mainnet.base.org answers `429 over rate limit` beyond ~5 concurrent
+ * requests, and JSON-RPC batching does not help (0/8 succeeded). So: back off and retry
+ * here, collapse reads into Multicall3 where possible (see lock.ts), and set an Alchemy
+ * URL in BASE_RPC_URL for production (architecture §20).
+ */
 export function createBaseClient(): PublicClient {
   return createPublicClient({
     chain: base,
-    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
+    transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org", {
+      retryCount: 4,
+      retryDelay: 400, // viem backs off exponentially from this base
+    }),
   }) as PublicClient;
 }
 
@@ -55,7 +64,7 @@ export async function checkOwnership(
   claim: Claim,
   project: Project,
   ctx: Ctx,
-  client: PublicClient = createBaseClient(),
+  client: PublicClient = ctx.rpc ?? createBaseClient(),
 ) {
   try {
     if (!project.contract) {

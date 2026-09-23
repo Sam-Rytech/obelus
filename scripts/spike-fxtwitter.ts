@@ -5,7 +5,7 @@
  * Already known (Sep 22): the API is alive and returns typed JSON on failure —
  * { code: 404, message: "NOT_FOUND", tweet: null }.
  */
-import { save, h, expect, done } from "./_spike.js";
+import { save, h, expect, done } from "./_spike";
 
 /** Custom UA is requested by FxTwitter's docs; it is also rate-limited, so cache 24 h. */
 const FX_UA = "ObelusBot/0.1 (crypto announcement fact-checker; +https://github.com/Sam-Rytech/obelus)";

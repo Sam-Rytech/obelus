@@ -15,10 +15,10 @@
  *   - 18 live symbols carry a PAST offTime.
  *   - 1,302 of the 1,581 not-live symbols still report apiStateBuy: true.
  */
-import { cached, TTL } from "../../lib/cache.js";
-import type { Claim, Project } from "../../lib/schema.js";
-import { decideListing, type MarketLookup } from "./market.js";
-import { evidence, failClosed, getJson, type Ctx } from "../types.js";
+import { cached, TTL } from "../../lib/cache";
+import type { Claim, Project } from "../../lib/schema";
+import { decideListing, type MarketLookup } from "./market";
+import { evidence, failClosed, getJson, type Ctx } from "../types";
 
 const SYMBOLS = "https://open-api.bingx.com/openApi/spot/v1/common/symbols";
 
@@ -48,10 +48,18 @@ function toState(s: BingxSymbol): { state: "live" | "delisted" | "announced" | "
 }
 
 async function loadSymbols(ctx: Ctx): Promise<BingxSymbol[]> {
-  return cached("bingx:symbols", TTL.EXCHANGE_SYMBOLS, async () => {
+  return cached("bingx:symbols:v2", TTL.EXCHANGE_SYMBOLS, async () => {
     ctx.budget.spend("bingx:symbols");
     const body = await getJson<{ data: { symbols: BingxSymbol[] } }>(SYMBOLS, ctx);
-    return body.data?.symbols ?? [];
+    // Only the fields the status gate reads — the raw 670 KB list is near Upstash's
+    // 1 MB value cap and slow to push from far regions.
+    return (body.data?.symbols ?? []).map(({ symbol, status, offTime, timeOnline, apiStateBuy }) => ({
+      symbol,
+      status,
+      offTime,
+      timeOnline,
+      apiStateBuy,
+    }));
   });
 }
 
@@ -101,7 +109,7 @@ export async function checkBingx(claim: Claim, project: Project, ctx: Ctx) {
       market ? `BingX: ${market.symbol} status ${market.status} (${state?.state})` : `BingX: no market for ${ticker}`,
     );
 
-    return decideListing(claim, lookup, project.contract, ev);
+    return decideListing(claim, lookup, project.contract, ev, project.contractSource);
   } catch (err) {
     return failClosed("bingx", claim, err);
   }

@@ -14,8 +14,8 @@
  *     so "not in MEXC's list" is real evidence. For an exchange that keeps delisted
  *     entries, or where we don't know, absence stays UNVERIFIED (§3).
  */
-import { REASON, type CheckResult, type Claim, type Evidence } from "../../lib/schema.js";
-import { result } from "../types.js";
+import { REASON, type CheckResult, type Claim, type Evidence } from "../../lib/schema";
+import { result } from "../types";
 
 /** What every exchange adapter must produce, whatever its API looks like. */
 export type MarketLookup = {
@@ -46,9 +46,30 @@ export function decideListing(
   lookup: MarketLookup,
   projectContract: string | undefined,
   extraEvidence: Evidence[] = [],
+  contractSource: "stated" | "resolved" = "stated",
 ): CheckResult {
   const { exchangeLabel, endpointUrl, market } = lookup;
   const ev = extraEvidence;
+
+  // --- "Will list" is about the future, which no market list can confirm or refute.
+  // Without this, "will list on MEXC next month" plus MEXC's exhaustive list would come
+  // back CONTRADICTED — absence is exactly what a genuine future listing looks like.
+  // Found in the first live run (Sep 23): a future Binance claim was stamped ✅.
+  if (claim.params.tense === "future") {
+    const now =
+      market?.state === "live"
+        ? `Already trading on ${exchangeLabel} (${market.symbol})`
+        : market
+          ? `On ${exchangeLabel} with status ${market.rawStatus}, not trading`
+          : `Not on ${exchangeLabel} yet`;
+    return result(
+      claim,
+      "UNVERIFIED",
+      `${REASON.FUTURE_CLAIM} — the announcement describes a future listing; ${now.charAt(0).toLowerCase()}${now.slice(1)}`,
+      ev,
+      `Future claim — ${now}`,
+    );
+  }
 
   // --- No market with that base asset --------------------------------------------
   if (!market) {
@@ -110,6 +131,17 @@ export function decideListing(
   if (listed && claimed) {
     if (listed === claimed) {
       return result(claim, "VERIFIED", `${REASON.LISTED_CONTRACT_MATCHES} — ${where}`, ev);
+    }
+    // If WE inferred the contract, the mismatch may be our wrong guess (a same-ticker
+    // clone on DexScreener), not the project's lie. That is not proof of anything.
+    if (contractSource === "resolved") {
+      return result(
+        claim,
+        "UNVERIFIED",
+        `${REASON.LISTED_CONTRACT_UNCONFIRMED} — ${where}; ${exchangeLabel} lists ${listed}, which differs from the contract Obelus inferred (${claimed}) because the announcement stated none`,
+        ev,
+        "Ticker listed — could not confirm it is this project's token",
+      );
     }
     // The scam case: right ticker, different token (§20).
     return result(

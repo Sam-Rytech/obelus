@@ -6,7 +6,7 @@
  * "Ticker listed — contract unconfirmed" branch of §10.1, exactly like BingX.
  */
 import * as ccxt from "ccxt";
-import { save, h, done } from "./_spike.js";
+import { save, h, done } from "./_spike";
 
 const EXCHANGES = ["binance", "bybit", "okx", "gate", "mexc", "kucoin", "bitget"] as const;
 

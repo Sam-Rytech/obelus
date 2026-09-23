@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { applyGuards, extractJsonObject, SYSTEM_PROMPT } from "../src/lib/extract.js";
+import { applyGuards, extractJsonObject, SYSTEM_PROMPT } from "../src/lib/extract";
 
 const ANNOUNCEMENT = `Introducing NovaBase (NOVA), the fastest DEX on Base.
 

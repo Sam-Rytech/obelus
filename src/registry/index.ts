@@ -20,7 +20,7 @@ import auditorsJson from "./auditors.json" with { type: "json" };
 import exchangesJson from "./exchanges.json" with { type: "json" };
 import lockersJson from "./lockers.base.json" with { type: "json" };
 import partnersJson from "./partners.json" with { type: "json" };
-import { EvmAddress } from "../lib/schema.js";
+import { EvmAddress } from "../lib/schema";
 
 export const ExchangeEntry = z.object({
   id: z.string(),

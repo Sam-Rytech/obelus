@@ -21,7 +21,7 @@
  */
 import { createPublicClient, http, getAddress, type Address } from "viem";
 import { base } from "viem/chains";
-import { save, h, expect, done } from "./_spike.js";
+import { save, h, expect, done } from "./_spike";
 
 const UNCX_DOCS =
   "https://docs.uncx.network/guides/for-developers/liquidity-lockers/lockers-v2/contracts";

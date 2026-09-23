@@ -10,7 +10,7 @@
  *    audited or not — substring-matching it would false-positive on everything.
  *    The discriminator is the "Not Audited By CertiK" badge.
  */
-import { getText, save, h, expect, done, UA } from "./_spike.js";
+import { getText, save, h, expect, done, UA } from "./_spike";
 
 const BADGE = "Not Audited By CertiK";
 const SECTION = "Code Audit History";

@@ -17,10 +17,10 @@
  * SOURCE_ERROR (§18), never a wrong verdict. Re-run scripts/spike-exchanges-direct.ts
  * from the deployment to confirm them.
  */
-import { cached, TTL } from "../../lib/cache.js";
-import type { Claim, Project } from "../../lib/schema.js";
-import { decideListing, type MarketLookup } from "./market.js";
-import { evidence, failClosed, type Ctx } from "../types.js";
+import { cached, TTL } from "../../lib/cache";
+import type { Claim, Project } from "../../lib/schema";
+import { decideListing, type MarketLookup } from "./market";
+import { evidence, failClosed, type Ctx } from "../types";
 
 type Parsed = {
   symbol: string;
@@ -216,7 +216,7 @@ export function makeDirectChecker(id: keyof typeof DIRECT_EXCHANGES | string) {
           : `${ex.label}: no ${ticker}/USDT market`,
       );
 
-      return decideListing(claim, lookup, project.contract, ev);
+      return decideListing(claim, lookup, project.contract, ev, project.contractSource);
     } catch (err) {
       return failClosed(ex.id, claim, err);
     }

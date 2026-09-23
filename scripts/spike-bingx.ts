@@ -8,7 +8,7 @@
  * §10.1 gates on status and not on mere presence in the list.
  * No public BingX endpoint carries a contract address.
  */
-import { getJson, save, h, expect, done } from "./_spike.js";
+import { getJson, save, h, expect, done } from "./_spike";
 
 const SYMBOLS = "https://open-api.bingx.com/openApi/spot/v1/common/symbols";
 const FUTURES = "https://open-api.bingx.com/openApi/swap/v2/quote/contracts";

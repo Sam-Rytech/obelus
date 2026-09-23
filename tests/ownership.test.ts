@@ -8,11 +8,11 @@
 import { describe, expect, it } from "vitest";
 import type { PublicClient } from "viem";
 
-import { checkOwnership } from "../src/checkers/ownership.js";
-import { Budget } from "../src/lib/budget.js";
-import { Trace } from "../src/lib/trace.js";
-import type { Claim, Project } from "../src/lib/schema.js";
-import type { Ctx } from "../src/checkers/types.js";
+import { checkOwnership } from "../src/checkers/ownership";
+import { Budget } from "../src/lib/budget";
+import { Trace } from "../src/lib/trace";
+import type { Claim, Project } from "../src/lib/schema";
+import type { Ctx } from "../src/checkers/types";
 
 const IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 const ZERO_WORD = `0x${"0".repeat(64)}`;

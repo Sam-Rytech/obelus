@@ -5,7 +5,7 @@
  * history) — neither belongs in a per-claim path inside the 60 s budget.
  * /tvl/<slug> returns the bare current number in ~17 bytes.
  */
-import { save, h, expect, done, UA } from "./_spike.js";
+import { save, h, expect, done, UA } from "./_spike";
 
 const TVL = "https://api.llama.fi/tvl/";
 const PROTOCOLS = "https://api.llama.fi/protocols";

@@ -10,7 +10,7 @@
  *    AERO on BASE -> 0x940181a94a35a4569e4529a3cdfb74e38fd98631, which matches
  *    DexScreener's baseToken.address exactly.
  */
-import { getJson, save, h, expect, done } from "./_spike.js";
+import { getJson, save, h, expect, done } from "./_spike";
 
 const PRODUCTS_V2 = "https://api-spot.weex.com/api/v2/public/products";
 const EXCHANGE_INFO = "https://api-spot.weex.com/api/v3/exchangeInfo";

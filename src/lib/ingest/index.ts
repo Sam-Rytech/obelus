@@ -3,14 +3,14 @@
  *
  * `x.com|twitter.com/.../status/<id>` → X; other `http(s)://` → URL; else text.
  */
-import { ingestText, IngestError, type Ingested } from "./text.js";
-import { ingestUrl } from "./url.js";
-import { ingestX, isTweetUrl } from "./x.js";
+import { ingestText, IngestError, type Ingested } from "./text";
+import { ingestUrl } from "./url";
+import { ingestX, isTweetUrl } from "./x";
 
-export { IngestError, MAX_INPUT_CHARS, normalizeText } from "./text.js";
-export type { Ingested } from "./text.js";
-export { assertSafeUrl, htmlToText, isBlockedAddress } from "./url.js";
-export { isTweetUrl, parseTweetId } from "./x.js";
+export { IngestError, MAX_INPUT_CHARS, normalizeText } from "./text";
+export type { Ingested } from "./text";
+export { assertSafeUrl, htmlToText, isBlockedAddress } from "./url";
+export { isTweetUrl, parseTweetId } from "./x";
 
 export type InputKind = "x" | "url" | "text";
 

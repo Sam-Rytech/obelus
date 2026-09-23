@@ -60,6 +60,12 @@ export const Project = z.object({
   name: z.string().optional(),
   ticker: z.string().optional(),
   contract: EvmAddress.optional(),
+  /**
+   * "stated": copied from the announcement. "resolved": inferred by Obelus via
+   * DexScreener. Only a stated contract may produce DIFFERENT_TOKEN_SAME_TICKER —
+   * an inference that picked a same-ticker clone must not stamp the project ❌.
+   */
+  contractSource: z.enum(["stated", "resolved"]).optional(),
   chain: z.literal("base").default("base"),
 });
 export type Project = z.infer<typeof Project>;
@@ -145,6 +151,8 @@ export const REASON = {
   // PARTNERSHIP (§10.5)
   PARTNER_NOT_IN_REGISTRY: "PARTNER_NOT_IN_REGISTRY",
   PARTNER_CONFIRMED: "PARTNER_CONFIRMED",
+  /** The partner's site names the project, but not in partnership terms (e.g. a price feed). */
+  MENTION_ONLY: "MENTION_ONLY",
   NO_PARTNER_CONFIRMATION: "NO_PARTNER_CONFIRMATION",
   // TVL (§10.6)
   TVL_WITHIN_TOLERANCE: "TVL_WITHIN_TOLERANCE",

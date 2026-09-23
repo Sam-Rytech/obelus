@@ -14,7 +14,7 @@
  */
 import { tavily } from "@tavily/core";
 
-import { h, expect, done, save } from "./_spike.js";
+import { h, expect, done, save } from "./_spike";
 
 function hostOf(url: string): string {
   try {

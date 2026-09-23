@@ -8,12 +8,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DIRECT_EXCHANGES, makeDirectChecker } from "../src/checkers/exchange/direct.js";
-import type { Ctx } from "../src/checkers/types.js";
-import { Budget } from "../src/lib/budget.js";
-import { resetCacheForTests } from "../src/lib/cache.js";
-import type { Claim, Project } from "../src/lib/schema.js";
-import { Trace } from "../src/lib/trace.js";
+import { DIRECT_EXCHANGES, makeDirectChecker } from "../src/checkers/exchange/direct";
+import type { Ctx } from "../src/checkers/types";
+import { Budget } from "../src/lib/budget";
+import { resetCacheForTests } from "../src/lib/cache";
+import type { Claim, Project } from "../src/lib/schema";
+import { Trace } from "../src/lib/trace";
 
 const claim: Claim = {
   id: "c1",

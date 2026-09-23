@@ -19,7 +19,7 @@
       "coinbase.com",
       "www.coinbase.com"
     ],
-    "notes": "NOT verified from the dev network: coinbase.com and www.coinbase.com both fail DNS from Lagos, same as binance.com and okx.com. Re-run scripts/verify-domains.ts from the deployment before relying on a Coinbase partnership verdict."
+    "verified": "2026-09-23"
   },
   {
     "id": "base",
