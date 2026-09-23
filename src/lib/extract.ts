@@ -202,6 +202,9 @@ export async function extract(llm: Llm, sourceText: string): Promise<ExtractionR
     messages: [{ role: "user", content: `${OPEN}\n${sourceText}\n${CLOSE}` }],
     temperature: 0,
     json: true,
+    // Malformed output (seen from gpt-oss-20b: "claims[1] is not an object") hands over
+    // to the next model in a fallback chain instead of failing the whole check.
+    validate: (text) => void ExtractionOutput.parse(extractJsonObject(text)),
   });
   return applyGuards(raw, sourceText);
 }

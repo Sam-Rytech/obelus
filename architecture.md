@@ -144,7 +144,7 @@ Obelus is an agent, not a script, because it **plans and adapts per input**:
 | App | Next.js (App Router) | UI + API routes in one deploy |
 | Package manager | pnpm | Fast, reliable on Windows |
 | Validation | Zod | Every LLM output + every external response validated |
-| LLM | **Gemini** (`gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite`) via `LLM_PROVIDER=gemini`, thinking set to `low`; Anthropic (`claude-sonnet-5`) remains selectable | Switched Sep 24: the Anthropic org has no API credit and Gemini has a free tier. Both models kept 8/8 claims through the quote guard. **The free tier has no availability guarantee:** the same extraction took 3.6 s, then hit 503s and >90 s within hours, from Lagos and from Vercel (iad1 and fra1) alike |
+| LLM | **Provider chain** `LLM_PROVIDER=groq,gemini`: Groq `qwen/qwen3.8-27b` → Groq `openai/gpt-oss-120b` → Gemini `gemini-3.6-flash` → `gemini-3.5-flash-lite`, one shared 45 s deadline; Anthropic (`claude-sonnet-5`) selectable | Anthropic org has no API credit; Gemini's free tier went unavailable for hours (503s, >90 s) on Sep 24. Qwen kept 8/8 claims with exact quotes in 2.5–4.6 s; gpt-oss-120b paraphrased one quote (guard dropped it); gpt-oss-20b returned malformed JSON and isn't used. Any failure, including malformed output, falls through to the next model |
 | EVM reads | viem | Base contract reads, storage slots |
 | Exchanges | direct fetch for BingX/WEEX; `ccxt` for others | BingX/WEEX public endpoints need no keys |
 | Search/extract | Tavily (`include_domains`) | Domain-restricted search = primary-source search |

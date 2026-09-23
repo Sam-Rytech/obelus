@@ -9,10 +9,13 @@
  * During extraction the model has NO TOOLS (§18), so untrusted input cannot cause an
  * action — the worst case is malformed JSON, which fails validation.
  *
- * Providers, chosen by LLM_PROVIDER:
- *   "anthropic" (default) — ANTHROPIC_API_KEY, model LLM_MODEL
- *   "gemini"              — GEMINI_API_KEY, model GEMINI_MODEL. Added Sep 24 because the
- *                           Anthropic org has no API credit; Gemini has a free tier.
+ * Providers, tried in the order LLM_PROVIDER lists them (e.g. "groq,gemini"); each
+ * expands to its own model list, and providers without a key are skipped:
+ *   "groq"      — GROQ_API_KEY,      models GROQ_MODEL    (free tier, fast)
+ *   "gemini"    — GEMINI_API_KEY,    models GEMINI_MODEL  (free tier, unstable latency)
+ *   "anthropic" — ANTHROPIC_API_KEY, model  LLM_MODEL     (paid credit)
+ * Sep 24: the Anthropic org has no API credit, and Gemini's free tier was overloaded
+ * (503s, >90 s) for hours — hence a multi-provider chain rather than one model.
  */
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -25,6 +28,13 @@ export type CompleteArgs = {
   temperature?: number;
   /** Ask the provider for a JSON object where it supports that natively. */
   json?: boolean;
+  /** Upper bound for this call; implementations use the smaller of this and their own. */
+  timeoutMs?: number;
+  /**
+   * Throw if the text is unusable (e.g. malformed JSON). In a FallbackLlm, a response
+   * that fails validation hands over to the next model instead of failing the check.
+   */
+  validate?: (text: string) => void;
 };
 
 export interface Llm {
@@ -33,11 +43,17 @@ export interface Llm {
   complete(args: CompleteArgs): Promise<string>;
 }
 
-export type LlmProvider = "anthropic" | "gemini";
+export type LlmProvider = "anthropic" | "gemini" | "groq";
+
+const KEY_VAR: Record<LlmProvider, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  gemini: "GEMINI_API_KEY",
+  groq: "GROQ_API_KEY",
+};
 
 export class LlmNotConfiguredError extends Error {
-  constructor(provider: LlmProvider) {
-    super(`${provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY"} is not set`);
+  constructor(providers: LlmProvider[]) {
+    super(`No API key is set for ${providers.map((p) => KEY_VAR[p]).join(" / ")}`);
     this.name = "LlmNotConfiguredError";
   }
 }
@@ -53,6 +69,8 @@ export class LlmRequestError extends Error {
   }
 }
 
+const timeout = (own: number, args: CompleteArgs) => Math.max(1_000, Math.min(own, args.timeoutMs ?? own));
+
 // ---- Anthropic -------------------------------------------------------------------
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
@@ -64,19 +82,24 @@ class AnthropicLlm implements Llm {
   constructor(
     apiKey: string,
     private readonly model: string,
+    private readonly timeoutMs = 40_000,
   ) {
     this.client = new Anthropic({ apiKey });
     this.name = `anthropic:${model}`;
   }
 
-  async complete({ system, messages, maxTokens = 4096, temperature = 0 }: CompleteArgs): Promise<string> {
-    const res = await this.client.messages.create({
-      model: this.model,
-      max_tokens: maxTokens,
-      temperature, // 0: extraction must be reproducible for the same input
-      system,
-      messages,
-    });
+  async complete(args: CompleteArgs): Promise<string> {
+    const { system, messages, maxTokens = 4096, temperature = 0 } = args;
+    const res = await this.client.messages.create(
+      {
+        model: this.model,
+        max_tokens: maxTokens,
+        temperature, // 0: extraction must be reproducible for the same input
+        system,
+        messages,
+      },
+      { timeout: timeout(this.timeoutMs, args), maxRetries: 0 },
+    );
 
     return res.content
       .filter((block): block is Anthropic.TextBlock => block.type === "text")
@@ -88,15 +111,10 @@ class AnthropicLlm implements Llm {
 // ---- Gemini ----------------------------------------------------------------------
 
 /**
- * Tried in order (GEMINI_MODEL takes a comma-separated list). Both kept 8/8 claims
- * through the quote guard on the test announcement (Sep 24).
- *
- * FREE-TIER LATENCY IS NOT STABLE. Measured Sep 24 for the same 650-token extraction:
- * 3.6-flash 3.6 s one hour, then 26 s and 503s; Flash-Lite 18 s, then >90 s — from
- * Lagos, Vercel iad1 and Vercel fra1 alike, so it is load over time, not region.
- *
- * Order: 3.6-flash first because when healthy it is ~4 s, and when overloaded it
- * usually fails FAST (503 in ~2 s); Flash-Lite, slower but steadier, second.
+ * Both kept 8/8 claims through the quote guard on the test announcement (Sep 24).
+ * FREE-TIER LATENCY IS NOT STABLE: the same 650-token extraction took 3.6 s one hour,
+ * then hit 503s and >90 s — from Lagos, Vercel iad1 and Vercel fra1 alike.
+ * 3.6-flash first: ~4 s when healthy, and usually fails FAST (503) when overloaded.
  */
 export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash,gemini-3.5-flash-lite";
 
@@ -117,12 +135,13 @@ export class GeminiLlm implements Llm {
   constructor(
     private readonly apiKey: string,
     private readonly model: string,
-    private readonly timeoutMs = 45_000,
+    private readonly timeoutMs = 30_000,
   ) {
     this.name = `gemini:${model}`;
   }
 
-  async complete({ system, messages, maxTokens = 4096, temperature = 0, json }: CompleteArgs): Promise<string> {
+  async complete(args: CompleteArgs): Promise<string> {
+    const { system, messages, maxTokens = 4096, temperature = 0, json } = args;
     const res = await fetch(`${GEMINI_API}/models/${encodeURIComponent(this.model)}:generateContent`, {
       method: "POST",
       headers: {
@@ -141,11 +160,11 @@ export class GeminiLlm implements Llm {
           ...(json ? { responseMimeType: "application/json" } : {}),
           // Extraction is copying, not reasoning. Measured Sep 24: gemini-3.6-flash spent
           // 2,655 tokens thinking by default (15.9 s); at "low" it spent 0 and answered
-          // the same claims in 3.6 s. The default thinking is what timed out production.
+          // the same claims in 3.6 s.
           thinkingConfig: { thinkingLevel: "low" },
         },
       }),
-      signal: AbortSignal.timeout(this.timeoutMs),
+      signal: AbortSignal.timeout(timeout(this.timeoutMs, args)),
     });
 
     const body = (await res.json().catch(() => null)) as GeminiResponse | null;
@@ -171,41 +190,119 @@ export class GeminiLlm implements Llm {
   }
 }
 
-// ---- fallback --------------------------------------------------------------------
+// ---- Groq ------------------------------------------------------------------------
 
 /**
- * Worth trying the next model: quota exhausted (429), overloaded (503), a server error,
- * a retired model (404), or no connection at all. NOT worth it for a 400 — a bad request
- * would fail the same way on every model.
+ * Measured Sep 24 on the test announcement, through the quote guard:
+ *   qwen/qwen3.8-27b     4.6 s  8/8 kept, exact whole-sentence quotes     — primary
+ *   openai/gpt-oss-120b  2.9 s  7/8 — rewrote "listed on WEEX and BingX" as
+ *                               "listed on BingX"; the guard rightly dropped it
+ *   openai/gpt-oss-20b   1.2 s  malformed JSON (claims[1] not an object)   — not used
+ * Groq rate-limits per model, so the second model is also a second quota.
  */
-export function isRetryable(err: unknown): boolean {
-  if (err instanceof LlmRequestError) {
-    return err.status === undefined || err.status === 404 || err.status === 429 || err.status >= 500;
-  }
-  return true; // network failure, timeout
+export const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b,openai/gpt-oss-120b";
+
+const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+
+type GroqResponse = {
+  choices?: { message?: { content?: string | null }; finish_reason?: string }[];
+  error?: { message?: string; type?: string };
+};
+
+/** Reasoning models: keep reasoning minimal and OUT of the content we parse. */
+function groqReasoning(model: string): Record<string, unknown> {
+  if (model.startsWith("openai/gpt-oss")) return { reasoning_effort: "low", include_reasoning: false };
+  if (model.startsWith("qwen/")) return { reasoning_format: "hidden" };
+  return {};
 }
+
+export class GroqLlm implements Llm {
+  readonly name: string;
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string,
+    private readonly timeoutMs = 15_000,
+  ) {
+    this.name = `groq:${model}`;
+  }
+
+  async complete(args: CompleteArgs): Promise<string> {
+    const { system, messages, maxTokens = 4096, temperature = 0, json } = args;
+    const res = await fetch(GROQ_API, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${this.apiKey}` },
+      body: JSON.stringify({
+        model: this.model,
+        temperature,
+        max_completion_tokens: maxTokens,
+        messages: [{ role: "system", content: system }, ...messages],
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+        ...groqReasoning(this.model),
+      }),
+      signal: AbortSignal.timeout(timeout(this.timeoutMs, args)),
+    });
+
+    const body = (await res.json().catch(() => null)) as GroqResponse | null;
+    if (!res.ok) {
+      const msg = body?.error?.message ?? `HTTP ${res.status}`;
+      throw new LlmRequestError(`Groq ${res.status}: ${msg.slice(0, 200)}`, res.status);
+    }
+
+    const choice = body?.choices?.[0];
+    const text = choice?.message?.content ?? "";
+    if (!text) throw new LlmRequestError(`Groq returned no text (finish_reason ${choice?.finish_reason ?? "unknown"})`);
+    if (choice?.finish_reason === "length") {
+      throw new LlmRequestError("Groq stopped at the output token limit; the extraction is incomplete");
+    }
+    return text;
+  }
+}
+
+// ---- fallback --------------------------------------------------------------------
+
+/** The whole chain must finish inside Vercel's 60 s, leaving the checks their floor. */
+export const EXTRACTION_BUDGET_MS = 45_000;
 
 export class FallbackLlm implements Llm {
   readonly name: string;
 
-  constructor(private readonly chain: Llm[]) {
+  constructor(
+    private readonly chain: Llm[],
+    private readonly budgetMs = EXTRACTION_BUDGET_MS,
+  ) {
     if (chain.length === 0) throw new Error("FallbackLlm needs at least one model");
     this.name = chain.map((l) => l.name).join(" → ");
   }
 
+  /**
+   * Every failure falls through to the next model — timeouts, quota (429), overload
+   * (503), auth (401/403), bad request (400), and a response that fails `validate`.
+   * The chain spans providers with different keys and request formats, so one
+   * provider's refusal says nothing about the next; and such errors return instantly,
+   * so trying the next model costs almost nothing.
+   */
   async complete(args: CompleteArgs): Promise<string> {
-    let last: unknown;
+    const deadline = Date.now() + this.budgetMs;
+    let last: unknown = new Error("no model was tried");
+
     for (const llm of this.chain) {
+      const remaining = deadline - Date.now();
+      if (remaining < 1_500) {
+        console.warn(`[llm] extraction budget spent; skipping ${llm.name}`);
+        break;
+      }
       const t0 = Date.now();
       try {
-        const out = await llm.complete(args);
+        const text = await llm.complete({ ...args, timeoutMs: Math.min(args.timeoutMs ?? remaining, remaining) });
+        args.validate?.(text);
         console.info(`[llm] ${llm.name} answered in ${Date.now() - t0}ms`);
-        return out;
+        return text;
       } catch (err) {
         last = err;
         // Logged per attempt so a production failure says WHICH model failed and HOW.
-        console.warn(`[llm] ${llm.name} failed after ${Date.now() - t0}ms: ${err instanceof Error ? err.message : String(err)}`);
-        if (!isRetryable(err)) throw err;
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[llm] ${llm.name} failed after ${Date.now() - t0}ms: ${msg.slice(0, 200)}`);
       }
     }
     throw last;
@@ -214,37 +311,55 @@ export class FallbackLlm implements Llm {
 
 // ---- selection -------------------------------------------------------------------
 
+const PROVIDERS: LlmProvider[] = ["anthropic", "gemini", "groq"];
+
+/** Providers in the order LLM_PROVIDER lists them; defaults to Anthropic alone. */
+export function llmProviders(): LlmProvider[] {
+  const listed = (process.env.LLM_PROVIDER || "anthropic")
+    .split(",")
+    .map((p) => p.trim().toLowerCase())
+    .filter((p): p is LlmProvider => (PROVIDERS as string[]).includes(p));
+  return listed.length ? [...new Set(listed)] : ["anthropic"];
+}
+
+/** Back-compat: the first listed provider. */
 export function llmProvider(): LlmProvider {
-  return process.env.LLM_PROVIDER === "gemini" ? "gemini" : "anthropic";
+  return llmProviders()[0]!;
 }
 
 export function llmModel(provider: LlmProvider = llmProvider()): string {
-  return provider === "gemini"
-    ? process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL
-    : process.env.LLM_MODEL || DEFAULT_MODEL;
+  if (provider === "gemini") return process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  if (provider === "groq") return process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
+  return process.env.LLM_MODEL || DEFAULT_MODEL;
+}
+
+function modelsFor(provider: LlmProvider): string[] {
+  return llmModel(provider)
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+}
+
+function build(provider: LlmProvider, key: string, model: string): Llm {
+  if (provider === "groq") return new GroqLlm(key, model); // healthy: 3–5 s
+  if (provider === "gemini") return new GeminiLlm(key, model); // healthy: 4–20 s
+  return new AnthropicLlm(key, model);
 }
 
 export function createLlm(): Llm {
-  const provider = llmProvider();
-  if (provider === "gemini") {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) throw new LlmNotConfiguredError("gemini");
-    const models = llmModel("gemini")
-      .split(",")
-      .map((m) => m.trim())
-      .filter(Boolean);
-    // Primary gets 15 s (healthy ~4 s; overloaded usually 503s fast); the fallback gets
-    // 30 s. Together ≤ 45 s, leaving the check phase its floor inside Vercel's 60 s.
-    const chain = models.map((m, i) => new GeminiLlm(key, m, models.length === 1 ? 40_000 : i === 0 ? 15_000 : 30_000));
-    return chain.length === 1 ? chain[0]! : new FallbackLlm(chain);
+  const providers = llmProviders();
+  const chain: Llm[] = [];
+  for (const p of providers) {
+    const key = process.env[KEY_VAR[p]];
+    if (!key) continue; // a listed provider without a key is skipped, not fatal
+    for (const m of modelsFor(p)) chain.push(build(p, key, m));
   }
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new LlmNotConfiguredError("anthropic");
-  return new AnthropicLlm(key, llmModel("anthropic"));
+  if (chain.length === 0) throw new LlmNotConfiguredError(providers);
+  return chain.length === 1 ? chain[0]! : new FallbackLlm(chain);
 }
 
 export function llmConfigured(): boolean {
-  return Boolean(llmProvider() === "gemini" ? process.env.GEMINI_API_KEY : process.env.ANTHROPIC_API_KEY);
+  return llmProviders().some((p) => Boolean(process.env[KEY_VAR[p]]));
 }
 
 /**

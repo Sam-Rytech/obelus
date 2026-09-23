@@ -3,9 +3,10 @@
  *
  * One cheap probe per upstream, in parallel, 6 s each, cached 60 s per instance.
  * Tavily is reported as "configured" and never called, so a status page can't burn
- * search credits; a key being present is never reported as "up". The ACTIVE extractor
- * gets a real probe, because it's the step every check depends on: Gemini via the free
- * models.get (no quota spent), Anthropic via a 1-token call.
+ * search credits; a key being present is never reported as "up". Every provider in the
+ * extraction chain gets a real probe, because extraction is the step every check depends
+ * on: Groq via its free /models, Gemini via the free models.get (no quota spent either
+ * way), Anthropic via a 1-token call.
  */
 import { Redis } from "@upstash/redis";
 import { createPublicClient, formatEther, http, type Hex } from "viem";
@@ -13,7 +14,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { currentEasChain, easRpcUrl } from "@/src/lib/chains";
-import { llmModel, llmProvider } from "@/src/lib/llm";
+import { llmModel, llmProviders } from "@/src/lib/llm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -107,14 +108,40 @@ async function runProbes(): Promise<Probe[]> {
       : Promise.resolve(configured("eas", "EAS", receiptRole, false)),
   );
 
-  // The extractor is the one step every check needs, so it gets a real probe — for
-  // whichever provider is ACTIVE (LLM_PROVIDER), not every provider with a key.
-  const role = "Reading claims out of the text";
-  const provider = llmProvider();
+  // The extractor is the one step every check needs, so every provider in the chain
+  // (LLM_PROVIDER, in order) gets a real probe — and only those, not every key present.
+  const providers = llmProviders();
   const geminiKey = process.env.GEMINI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
+  const roleFor = (p: string) =>
+    providers.length > 1
+      ? `Reading claims out of the text (${providers.indexOf(p as never) === 0 ? "first choice" : `fallback ${providers.indexOf(p as never)}`})`
+      : "Reading claims out of the text";
 
-  if (provider === "gemini") {
+  if (providers.includes("groq")) {
+    // /models is free and doesn't touch the rate-limited chat quota.
+    const role = roleFor("groq");
+    const primary = llmModel("groq").split(",")[0]!.trim();
+    probes.push(
+      groqKey
+        ? probe("groq", `Groq (${primary})`, role, async () => {
+            const res = await fetch("https://api.groq.com/openai/v1/models", {
+              headers: { authorization: `Bearer ${groqKey}` },
+              signal: AbortSignal.timeout(TIMEOUT),
+              cache: "no-store",
+            });
+            if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
+            const body = (await res.json()) as { data?: { id: string }[] };
+            const listed = body.data?.some((m) => m.id === primary);
+            return { ok: Boolean(listed), detail: listed ? "key valid, model available" : `${primary} not offered` };
+          })
+        : Promise.resolve(configured("groq", "Groq", role, false)),
+    );
+  }
+
+  if (providers.includes("gemini")) {
+    const role = roleFor("gemini");
     // models.get is free and doesn't touch the generation quota, so a status page can
     // never eat into the free tier. It proves the key and the primary model are valid.
     const primary = llmModel("gemini").split(",")[0]!.trim();
@@ -136,9 +163,9 @@ async function runProbes(): Promise<Probe[]> {
 
   // Anthropic: a 1-token call (a tiny fraction of a cent, at most once a minute per
   // instance), which catches what a key-present check can't — e.g. an org with no credit.
-  if (provider === "anthropic") probes.push(
+  if (providers.includes("anthropic")) probes.push(
     anthropicKey
-      ? probe("anthropic", "Anthropic", role, async () => {
+      ? probe("anthropic", "Anthropic", roleFor("anthropic"), async () => {
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: { "x-api-key": anthropicKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -153,7 +180,7 @@ async function runProbes(): Promise<Probe[]> {
           const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
           return { ok: false, detail: body?.error?.message?.slice(0, 80) ?? `HTTP ${res.status}` };
         })
-      : Promise.resolve(configured("anthropic", "Anthropic", role, false)),
+      : Promise.resolve(configured("anthropic", "Anthropic", roleFor("anthropic"), false)),
   );
 
   const results = await Promise.all(probes);
