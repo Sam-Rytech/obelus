@@ -1,0 +1,102 @@
+{
+  "ranAt": "2026-09-23T22:11:50.499Z",
+  "site": "https://obelus-five.vercel.app",
+  "rows": [
+    {
+      "label": "Chainwire — Apex Fusion has AP3X listed on MEXC (Mar 2025)",
+      "kind": "press-release",
+      "input": "https://chainwire.org/2025/03/13/apex-fusion-has-ap3x-token-listed-on-mexc-exchange/",
+      "reportId": "ArfJ6uZePE",
+      "project": "Apex Fusion (AP3X)",
+      "claims": 12,
+      "verified": 0,
+      "contradicted": 1,
+      "unverified": 0,
+      "notCheckable": 11,
+      "sourceErrors": 0,
+      "seconds": 3.9,
+      "contradictions": [
+        "\"The Apex Fusion Foundation has announced that the AP3X token has been \" — no market for this ticker in MEXC's full symbol list"
+      ]
+    },
+    {
+      "label": "Crypto Times — AP3X now trading on MEXC (republished)",
+      "kind": "news",
+      "input": "https://www.cryptotimes.io/2025/03/13/apex-fusions-ap3x-token-now-trading-on-mexc-exchange/",
+      "reportId": "DCO0DMG1cd",
+      "project": "Apex Fusion (AP3X)",
+      "claims": 1,
+      "verified": 0,
+      "contradicted": 1,
+      "unverified": 0,
+      "notCheckable": 0,
+      "sourceErrors": 0,
+      "seconds": 2,
+      "contradictions": [
+        "\"Apex Fusion’s AP3X token is now available to trade on the MEXC exchang\" — no market for this ticker in MEXC's full symbol list"
+      ]
+    },
+    {
+      "label": "Blockster — AP3X listed on MEXC (republished)",
+      "kind": "news",
+      "input": "https://blockster.com/apex-fusion-has-ap3x-token-listed-on-mexc-exchange",
+      "reportId": "K6l2JsPukA",
+      "project": "Apex Fusion (AP3X)",
+      "claims": 1,
+      "verified": 0,
+      "contradicted": 1,
+      "unverified": 0,
+      "notCheckable": 0,
+      "sourceErrors": 0,
+      "seconds": 2.7,
+      "contradictions": [
+        "\"The Apex Fusion Foundation announced that the AP3X token was listed on\" — no market for this ticker in MEXC's full symbol list"
+      ]
+    },
+    {
+      "label": "Chainwire — MEXC announces SOON listing (May 2025)",
+      "kind": "press-release",
+      "input": "https://chainwire.org/2025/05/20/mexc-announces-soon-soon-listing-with-75000-soon-50000-usdt-prize-pool/",
+      "reportId": "xQWvXHrwKG",
+      "project": "SOON (SOON)",
+      "claims": 12,
+      "verified": 0,
+      "contradicted": 0,
+      "unverified": 1,
+      "notCheckable": 11,
+      "sourceErrors": 0,
+      "seconds": 5.1,
+      "contradictions": []
+    },
+    {
+      "label": "Chainwire — Mavryk mainnet token launch on MEXC (Aug 2025)",
+      "kind": "press-release",
+      "input": "https://chainwire.org/2025/08/25/rwa-blockchain-mavryk-announces-mainnet-token-launch-on-mexc/",
+      "reportId": "dewPOPiZKl",
+      "project": "Mavryk Network (MVRK)",
+      "claims": 5,
+      "verified": 0,
+      "contradicted": 0,
+      "unverified": 2,
+      "notCheckable": 3,
+      "sourceErrors": 0,
+      "seconds": 4.6,
+      "contradictions": []
+    },
+    {
+      "label": "Unchained — MultiBank lists MBG on Gate.io and MEXC (Jul 2025)",
+      "kind": "press-release",
+      "input": "https://unchainedcrypto.com/press-release/multibank-group-to-list-mbg-token-on-gate-io-and-mexc-during-official-token-generation-event/",
+      "reportId": "XbT0fGv8FW",
+      "project": "MultiBank Group (MBG)",
+      "claims": 4,
+      "verified": 0,
+      "contradicted": 0,
+      "unverified": 3,
+      "notCheckable": 1,
+      "sourceErrors": 0,
+      "seconds": 3,
+      "contradictions": []
+    }
+  ]
+}

@@ -44,6 +44,9 @@ were verified and 0 contradicted. The other 31 were unconfirmed by the one sourc
 confirmed them, including a "CertiK-audited" project with no CertiK record. The median check took 3–5
 seconds, and no source outage was mistaken for a verdict.
 
+A targeted re-check of 2025 listing announcements caught a real case. Apex Fusion's release "AP3X Token Listed on MEXC" is still carried by three sites, and MEXC's own
+full symbol list no longer has AP3X. CoinGecko confirms it trades only on DEXes now.
+
 **Receipts.** Every report is hashed (keccak256 of canonical JSON) and attested with EAS on Base, along
 with its verdict counts. On any report's verify page, your browser re-hashes the report and compares it
 with the attestation read straight from Base.

@@ -1,9 +1,11 @@
 /**
  * One-click examples on the home page — architecture §15.
  *
- * Examples A (a real, clean announcement) and B (a real, mixed one) were picked on Day 5
- * from 22 real announcements run through the live site (fixtures/real/results*.json).
- * Each carries a `reportId` so the page loads instantly.
+ * Examples A (a real, clean announcement) and B (a real one with a claim that doesn't
+ * hold up) were picked on Day 5 from real announcements run through the live site
+ * (fixtures/real/results*.json). Each carries a `reportId` so the page loads instantly.
+ * B was true when published (March 2025); MEXC has since dropped AP3X, and CoinGecko
+ * independently shows it trading on DEXes only — so its note says "no longer".
  *
  * Example C is synthetic and MUST stay labelled as such (§15): it is about a real Base
  * token but was written by the Obelus team to show all three verdicts at once, and must
@@ -46,11 +48,11 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: "b",
-    label: "A real token launch",
-    note: "Aligned's launch press release: one claim confirmed, the rest can't be yet.",
-    input: "https://chainwire.org/2026/08/21/aligned-launches-align-the-native-token-of-its-full-ethereum-stack/",
+    label: "A real listing that no longer holds",
+    note: "Apex Fusion's March 2025 release says AP3X is listed on MEXC. MEXC's own list no longer has it.",
+    input: "https://chainwire.org/2025/03/13/apex-fusion-has-ap3x-token-listed-on-mexc-exchange/",
     synthetic: false,
-    reportId: "f0uh4Plxvf",
+    reportId: "ArfJ6uZePE",
   },
   {
     id: "test",

@@ -98,10 +98,19 @@ checked, 31 of 34 went unconfirmed by the one source that could have confirmed t
 release describing a project as "CertiK-audited" when CertiK has no record of it. That is **not** the same
 as false, and Obelus says so on every report.
 
+A second, targeted batch re-checked six 2025 listing announcements ([`results-3.json`](fixtures/real/results-3.json)).
+Apex Fusion's March 2025 release, "AP3X Token Listed on MEXC", is still carried by Chainwire, Crypto
+Times and Blockster, and Obelus marks the claim **contradicted** on all three: MEXC's full symbol list has
+no AP3X market. CoinGecko independently shows AP3X trading only on DEXes. The release was true when it
+was published. Obelus catches that the claim no longer holds, which is exactly what a buyer reading it
+today needs to know. The other three releases announced future listings ("will list"). Obelus marks
+those unverified `FUTURE_CLAIM` and notes that each token is now trading on MEXC.
+
 **Examples on the home page** (each opens a pre-run report):
 
 - **A — real, clean:** [Trusted Smart Chain's CertiK audit release](https://obelus-five.vercel.app/r/5zvwvrM6FR). The audit is confirmed on CertiK's own page.
-- **B — real, mixed:** [Aligned's $ALIGN launch](https://obelus-five.vercel.app/r/f0uh4Plxvf). The LambdaClass partnership is confirmed on LambdaClass's site; the rest can't be yet.
+- **B — real, doesn't hold up:** [Apex Fusion's AP3X listing release](https://obelus-five.vercel.app/r/ArfJ6uZePE). It says AP3X is listed on MEXC, and MEXC's own list no longer has it.
+- Also real: [Aligned's $ALIGN launch](https://obelus-five.vercel.app/r/f0uh4Plxvf). LambdaClass's own site confirms the partnership.
 - **C — labelled test:** [a test announcement about AERO](https://obelus-five.vercel.app/r/srezxyJ1aX), written by the Obelus team to show all three marks in one run. Among other claims, CertiK's own page contradicts "audited by CertiK". The report is labelled as a test everywhere it appears.
 
 ## Receipts

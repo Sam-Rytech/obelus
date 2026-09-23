@@ -249,6 +249,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 24 | Receipts written in Next's `after()` | The user gets their link without waiting on gas (§11), and the serverless function stays alive until the attestation lands |
 | Sep 24 | Health panel never reports a key as "up" | "Anthropic is answering" was showing while the account had no credit. Anthropic now gets a real 1-token probe; Tavily shows "set up, not called" |
 | Sep 24 | Attester wallet generated locally | Key written straight to .env.local and Vercel (sensitive); only the address was ever printed |
+| Sep 23 | **Example B → Apex Fusion AP3X (a real contradiction)**, replacing Aligned | The 22-announcement batch found no real contradictions. Hunting for fake "renounced" claims on 89 trending Base tokens found none. A targeted re-check of 2025 MEXC listing releases did: "AP3X Token Listed on MEXC" (Chainwire, Mar 2025, republished by Crypto Times and Blockster) is CONTRADICTED on all three. MEXC's exhaustive list has no AP3X; CoinGecko independently shows DEX-only markets. Framed as "no longer holds" (true when published), never as a lie. The other three releases were future-tense, so FUTURE_CLAIM plus "already trading" |
 | Sep 23 | **Listing questions answered directly** ("is $BTC listed?", Sam's request) | A question gave an empty report. Code parses ticker + exchanges (all six supported if none named) and runs the ordinary listing checks — no model call, no contract resolution (a guess could pick a same-ticker clone). Reports carry `mode: "question"`; announcement reports and their hashes are unchanged. Other questions get a hint on what to paste. Production: BTC answered by all 6 exchanges in one check |
 | Sep 23 | Partner registry expanded 15 → 50 | The first real-announcement batch showed most checkable claims were unverified only because the partner wasn't registered (XDC, Ondo, Upbit, BitGo, LambdaClass…). Every domain checked live; ones the dev ISP blocks were checked from fra1 |
 | Sep 23 | Day 5 examples: A = Trusted Smart Chain (CertiK ✓), B = Aligned (LambdaClass ✓ + unverified), C = labelled AERO test | Real examples chosen so nothing on the home page reads as an accusation against a real project; the one contradiction is on the labelled test. Remittix ("CertiK-audited", no CertiK record) is unverified, not false, so it isn't featured |
@@ -285,5 +286,8 @@ then `EAS_CHAIN=base`, `register-schema --send`, and re-attest the three example
 `scripts/attest-report.ts`); X account; public Telegram channel; make the repo public; record the video;
 ~$12 in the registered wallet for the ignition fee; submit. Nice to have: Alchemy RPC URL, Team Finance
 locker.
+
+**Also Sep 23:** listing questions ("is $BTC listed?"); a "who checks with Obelus" section on the
+home page; the first real contradiction (AP3X, above), which is now Example B.
 
 **Next task — build:** clean-browser dry run of the demo link; fix only what breaks.

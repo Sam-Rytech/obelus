@@ -1,9 +1,9 @@
-# Demo video script — about 2:30
+# Demo video script — about 2:40
 
 Record at 1080p (720p minimum) in a clean browser window at 110–125% zoom, so the text is readable.
 Before recording, open these tabs:
 1. https://obelus-five.vercel.app
-2. A real report, for example the Aligned report (Example B)
+2. The Apex Fusion AP3X report (Example B): https://obelus-five.vercel.app/r/ArfJ6uZePE
 3. Telegram with @Obelus_the_Bot, or a group it's in
 
 Have `fixtures/sample1.txt` (the labelled test announcement) on the clipboard.
@@ -54,14 +54,14 @@ changes from "Checking…" to the marks.
 
 **Say:** "In a group, reply /check to any shill and everyone sees what holds up, before anyone buys."
 
-### 2:20 — what's next (15 s)
+### 2:20 — a real one, and what's next (20 s)
 
-**Screen:** home page.
+**Screen:** click **"A real listing that no longer holds"** on the home page.
 
-**Say:** "I ran it on 22 real press releases. Two thirds of their claims can't be checked against
-anything, and of the rest, most went unconfirmed by the one source that could confirm them. Next: more
-exchanges that publish contract addresses, more auditors and more chains. Obelus: for two thousand years
-this mark has meant 'this line doesn't hold up.'"
+**Say:** "And a real one. This release says Apex Fusion's AP3X is listed on MEXC, and it's still on three
+news sites. MEXC's own list says it isn't any more. Next: more exchanges that publish contract addresses,
+more auditors and more chains. Obelus: for two thousand years this mark has meant 'this line doesn't hold
+up.'"
 
 ---
 
