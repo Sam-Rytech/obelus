@@ -22,13 +22,13 @@
 
 ## Day 0 — Tue Sep 22: accounts & keys (Sam, ~1 h)
 
-- [ ] GitHub repo `obelus` (public) under Sam-Rytech
+- [x] GitHub repo `obelus` under Sam-Rytech — created **private** Sep 22 at Sam's request. **Must be made public before submission** (Orion requires a public repo)
 - [ ] X account for the project (e.g. @ObelusCheck) — bio + link placeholder
 - [ ] Telegram: create bot with @BotFather → `TELEGRAM_BOT_TOKEN`; create a public channel/group for the project link
 - [ ] Vercel account linked to GitHub
-- [ ] Anthropic API key (add ~$5–10 credit) → `ANTHROPIC_API_KEY`
-- [ ] Tavily key (free, 1,000 credits/mo) → `TAVILY_API_KEY`. Optional: apply for the student plan (email support@tavily.com from student email — covers hackathons)
-- [ ] Upstash Redis (free) → REST URL + token
+- [ ] Anthropic API key (add ~$5–10 credit) → `ANTHROPIC_API_KEY` — **key set and authenticates, but the account has no credit** (API returns 400 "credit balance is too low"). Buy credits under Plans & Billing
+- [x] Tavily key (free, 1,000 credits/mo) → `TAVILY_API_KEY` — verified live Sep 23. Optional: apply for the student plan (email support@tavily.com from student email — covers hackathons)
+- [x] Upstash Redis (free) → REST URL + token — verified live through `cache.ts` Sep 23
 - [ ] Alchemy (free) Base mainnet RPC URL → `BASE_RPC_URL` (fallback: `https://mainnet.base.org`)
 - [ ] **New** wallet for attestations (NOT the registered wallet) → fund with ~$2 of ETH on Base → `ATTESTER_PRIVATE_KEY`
 - [ ] Registered wallet (Sam_rytech): hold ~$12 of ETH on Base for the ignition fee
@@ -45,7 +45,7 @@
 - [x] Dev deps: `vitest tsx`
 - [x] Scripts: `typecheck` (`tsc --noEmit`), `test` (`vitest run`), `fixture` (`tsx scripts/run-fixture.ts`)
 - [x] `architecture.md` + `Progress.md` are at the repo root; `git init` done; `.gitignore` + `.env.example` written
-- [ ] First commit + push to GitHub (`gh` is authenticated as Sam-Rytech — needs your go-ahead)
+- [x] First commit + push to GitHub — https://github.com/Sam-Rytech/obelus (private)
 - [ ] Deploy empty app to Vercel — **blocked, no Vercel account** (see Blockers)
 
 **Acceptance:** `pnpm typecheck` passes ✅ (Vercel URL pending).
@@ -184,7 +184,8 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Lockers (Base) | 2 registered, 2 rejected; **Team Finance BLOCKED** | From [UNCX v2 docs](https://docs.uncx.network/guides/for-developers/liquidity-lockers/lockers-v2/contracts). Registered (docs-listed **and** deployed on Base): Sushiswap `0xBeddF48499788607B4c2e704e9099561ab38Aae8`, Aerodrome `0x30e522deDfFE3e3d11Cd53E27d18Cd4F016eD870`. **Rejected: UNCX's "Base (Uniswap V2)" row `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` has NO CODE on Base** — had it gone in unverified, every Uniswap-V2-locked project would have read as unlocked. Also rejected `0x231278edd38b00b07fbd52120cef685b9baebcc1` (target of every Base explorer link in those docs; deployed but never labelled, so its role is unconfirmed). |
 | DefiLlama | Works — use `/tvl/<slug>` | **`/tvl/<slug>` = 17 B** (bare number; a miss returns `Protocol not found`) vs `/protocols` 8.9 MB and `/protocol/<slug>` 13.9 MB. Per-claim path is `/tvl`; `/protocols` only as a cached name→slug map (8,325 protocols, 876 on Base). |
 | EAS | Readable, no wallet needed | EAS `0x4200…0021` and SchemaRegistry `0x4200…0020` both have code on Base; `version()` = 1.0.1; `getAttestation` decodes via viem over the public RPC (~780 ms). Writing needs `ATTESTER_PRIVATE_KEY` (Day 4). |
-| Tavily | **Deferred** | Needs `TAVILY_API_KEY`. Scope shrank: CertiK no longer needs it, so it is used only for the audit fallback and PARTNERSHIP. |
+| Tavily | Works — `include_domains` is a hard restriction | Sep 23, `spike-tavily.ts`, ~3 credits. Every result for "Aave" on `chain.link` was on-domain. **Three findings for Day 3:** (1) Tavily *always* returns results — 5 for a fabricated project, 0 of which mention it — so `partnership.ts` must match the project name in the content; counting results would verify every claim. (2) **A mention is not a partnership:** all the Aave hits were Chainlink *price-feed pages*, so under §10.5 as written any token with a Chainlink feed would verify "partnered with Chainlink". Needs a design decision. (3) The CertiK fallback returns unrelated slugs next to the right one (`pancakeswap, four-meme, solidus-ai-tech…`), so it must pick by name. Latency 6–11 s per search from Lagos — over the 8 s ceiling. |
+| Upstash Redis | Works through `cache.ts` | Sep 23, `spike-upstash.ts`. Backend auto-selected from env; objects round-trip intact; TTL applied; `cached()` served a second call from Redis across a fresh backend instance — i.e. across serverless invocations. First set+get 4.8 s cold from Lagos; place the DB in the Vercel region. |
 | Exchanges (direct REST) | 2/4 verified here — **replaces CCXT** | Sep 23. CCXT measured unusable: `gate.loadMarkets()` **46.5 s** + 10.8 s `fetchCurrencies` (vs a 60 s pipeline), kucoin 4.1 s, bitget 5.0 s, binance 5.8 s (vs an 8 s per-call ceiling). Direct single-symbol REST instead: **MEXC** `api/v3/exchangeInfo?symbol=` 921 B / 171 ms warm, **Bybit** `api.bytick.com/v5/market/instruments-info` 637 B / 1.4 s warm. **Binance and OKX are DNS-blocked from this network** on every documented host (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`) — adapters ship with runtime shape validation so a mismatch degrades to UNVERIFIED. None of the four publishes a contract address. |
 | Registry domains | 19/21 reachable | Sep 23, `scripts/verify-domains.ts`. `certik.com` times out but `www.certik.com` serves 200 — registry updated. **`coinbase.com` and `www.coinbase.com` fail DNS** from this network, same pattern as Binance/OKX; the entry carries an explicit note instead of a verification date. |
 
@@ -213,6 +214,8 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 23 | **An unreachable source must never be reported as "no market"** | Found by running the fixture: a DNS failure was rendering as "not found in Binance's list". Against an exhaustive list (MEXC) that logic would turn a network blip into CONTRADICTED — a false ❌ on a real listing. Transport failures, 5xx, empty and non-JSON bodies now return SOURCE_ERROR; a 4xx is still a genuine "no market" |
 | Sep 23 | `listIsExhaustive` per exchange | Only MEXC omits delisted markets, so only MEXC can disprove a listing by absence. Encoding this per-exchange is what keeps CONTRADICTED-on-absence sound |
 | Sep 23 | Extractor discards a contract address not present in the source text | §3 forbids the model inventing a source. An unquoted address would silently redirect every on-chain checker to the wrong contract |
+| Sep 23 | `allowBuilds` in `pnpm-workspace.yaml`: only esbuild allowed | pnpm 11 had written unanswered placeholders there, which made **every `pnpm <script>` fail** — including `pnpm typecheck` and `pnpm test`. Default-deny: keccak, secp256k1 and bufferutil have pure-JS fallbacks and would need a C++ toolchain; ccxt's postinstall isn't needed |
+| Sep 23 | `pnpm fixture` / `pnpm spike` load `.env.local` via `node --env-file-if-exists` | tsx doesn't read `.env.local` (only Next.js does), so the scripts ran as if no keys were set. `-if-exists` keeps a fresh clone working |
 | Sep 23 | Partner registry limited to a verified top 15, not the ~50 in §9 | Each domain must be visited first, and the partnership checker treats a partner-domain page as proof. Unknown partners return UNVERIFIED, so coverage grows later without any logic change |
 
 ---
@@ -226,6 +229,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
 | Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | OPEN, mitigated. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
+| Sep 23 | **Anthropic account has no credit** | OPEN — Sam. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
 | Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
 
 ---

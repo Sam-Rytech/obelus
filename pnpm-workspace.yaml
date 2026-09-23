@@ -1,6 +1,11 @@
+# pnpm 11 refuses to run scripts until every dependency with an install script has an
+# explicit decision. Default-deny: only esbuild is allowed, because tsx and vitest need
+# its platform binary. The rest are optional native accelerators with pure-JS
+# fallbacks (keccak, secp256k1, bufferutil) or a postinstall we don't need (ccxt), and
+# building them would require a C++ toolchain on Windows and on Vercel.
 allowBuilds:
-  bufferutil: set this to true or false
-  ccxt: set this to true or false
-  esbuild: set this to true or false
-  keccak: set this to true or false
-  secp256k1: set this to true or false
+  esbuild: true
+  bufferutil: false
+  ccxt: false
+  keccak: false
+  secp256k1: false

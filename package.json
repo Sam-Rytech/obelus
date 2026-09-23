@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fixture": "tsx scripts/run-fixture.ts",
-    "spike": "tsx"
+    "fixture": "node --env-file-if-exists=.env.local --import tsx scripts/run-fixture.ts",
+    "spike": "node --env-file-if-exists=.env.local --import tsx"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
