@@ -101,7 +101,7 @@ describe("provider selection", () => {
     process.env.LLM_PROVIDER = "gemini";
     process.env.GEMINI_API_KEY = "k";
     delete process.env.GEMINI_MODEL;
-    expect(createLlm().name).toBe("gemini:gemini-3.6-flash → gemini:gemini-3.5-flash-lite");
+    expect(createLlm().name).toBe("gemini:gemini-3.5-flash-lite → gemini:gemini-3.6-flash");
   });
 
   it("stays on Anthropic by default", () => {

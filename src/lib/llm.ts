@@ -88,14 +88,19 @@ class AnthropicLlm implements Llm {
 // ---- Gemini ----------------------------------------------------------------------
 
 /**
- * Tried in order (GEMINI_MODEL takes a comma-separated list). Measured Sep 24 on the test
- * announcement, both kept 8/8 claims through the quote guard:
- *   gemini-3.6-flash       11.8 s, whole-sentence quotes            — primary
- *   gemini-3.5-flash-lite  19.3 s, some fragment quotes ("and BingX.")
- * Flash-Lite is the fallback because its free daily quota is far larger; newer Flash
- * models get fewer free requests and can be briefly overloaded (3.8-flash returned 503).
+ * Tried in order (GEMINI_MODEL takes a comma-separated list). Both kept 8/8 claims
+ * through the quote guard on the test announcement (Sep 24). What decides the order is
+ * latency FROM VERCEL (iad1), measured with a temporary in-production diagnostic:
+ *
+ *                          from Lagos        from Vercel iad1 (free tier)
+ *   gemini-3.5-flash-lite  18–29 s           ~18 s, consistently          — primary
+ *   gemini-3.6-flash       3.6 s             26.6 s for "OK", then 503    — fallback
+ *
+ * 3.6-flash writes nicer whole-sentence quotes, but its free tier is overloaded for US
+ * traffic. Flash-Lite is steady, and its free daily quota is far larger. The fallback
+ * mostly earns its place when Flash-Lite's quota runs out — a 429 comes back instantly.
  */
-export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash,gemini-3.5-flash-lite";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite,gemini-3.6-flash";
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -230,9 +235,9 @@ export function createLlm(): Llm {
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean);
-    // The primary normally answers in ~4 s, so 12 s means it's overloaded: move on while
-    // the fallback (Flash-Lite, 18–29 s measured) still has time inside Vercel's 60 s.
-    const chain = models.map((m, i) => new GeminiLlm(key, m, models.length === 1 ? 40_000 : i === 0 ? 12_000 : 28_000));
+    // Primary (~18 s from Vercel) gets 30 s. The fallback gets what can still fit inside
+    // Vercel's 60 s — enough for the instant-429 case it mainly exists for.
+    const chain = models.map((m, i) => new GeminiLlm(key, m, models.length === 1 ? 40_000 : i === 0 ? 30_000 : 14_000));
     return chain.length === 1 ? chain[0]! : new FallbackLlm(chain);
   }
   const key = process.env.ANTHROPIC_API_KEY;
