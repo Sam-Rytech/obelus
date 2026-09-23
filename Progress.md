@@ -119,10 +119,11 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 - [x] `app/method/page.tsx` — how each claim is checked, the marks, v1 limits, live source status
 - [x] `src/lib/eas.ts` + `anchor.ts` — attest via viem after the response (`after()`), receipt written back to the report; "receipt pending" fallback
 - [x] `scripts/register-schema.ts` — dry-run by default; schema UID `0xd10de7a2…ac4ac05` (not yet registered)
-- [ ] Register schema on Base — **waits on funding** the attester wallet `0x1027Ab454ef4a85271e997957a2a0A12d059F46C` (~$2 ETH on Base), then Sam's OK to send
+- [x] Receipts switchable to **Base Sepolia** for testing (`EAS_CHAIN`); checkers stay on mainnet. Production currently writes to Sepolia
+- [ ] Register schema on Base Sepolia — **waits on faucet ETH** at `0x1027Ab454ef4a85271e997957a2a0A12d059F46C`; then mainnet (~$2 ETH) once the testnet run passes
 - [x] `app/r/[id]/verify/page.tsx` — re-hashes in the browser and reads EAS on Base directly (public RPC allows CORS)
 - [x] `src/bot/telegram.ts` + `app/api/telegram/route.ts` + `scripts/set-webhook.ts` — replies "Checking…", finishes in `after()`, edits the message
-- [ ] Telegram live — **waits on `TELEGRAM_BOT_TOKEN`** from @BotFather
+- [x] Telegram live — **@Obelus_the_Bot**, webhook set to production with a secret (unsigned requests get 401). `/check` replies with an error until Anthropic credit lands
 - [x] `app/api/health/route.ts` + status panel on /method
 - [x] Production deploy — **https://obelus-five.vercel.app**, env vars set (secrets marked sensitive), `maxDuration` 60 on `/api/check` and `/api/telegram`
 - [x] Tests: `eas.test.ts`, `telegram.test.ts` — **162 passing**
@@ -233,6 +234,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 23 | Lock reads via one Multicall3 call; RPC client retries with backoff | Public Base RPC returns 429 beyond ~5 concurrent requests; batching didn't help |
 | Sep 23 | GitHub-hosted auditor repos not registered | Domain check is by hostname, so `github.com` would let any repo speak for PeckShield or Trail of Bits |
 | Sep 23 | Relative imports without `.js` | Next's webpack can't map `.js` → `.ts`; extensionless works in Next, tsc, tsx and vitest alike |
+| Sep 24 | Test receipts on Base Sepolia before mainnet (Sam's call) | Proves registration → attestation → verify for free. Receipts record their network; testnet ones are labelled on the report |
 | Sep 24 | UI direction "scholar's margin" (Sam's pick) | Verdicts as the ancient critical signs: Origen's asteriskos ※ for text attested by the source, Aristarchus's obelus ÷ for lines that don't hold up. Makes the product's name visible |
 | Sep 24 | EAS via viem, not `@ethereum-attestation-service/eas-sdk` + ethers | One `attest()` call doesn't justify a second web3 stack; viem also runs in the browser for the verify page |
 | Sep 24 | Receipts written in Next's `after()` | The user gets their link without waiting on gas (§11), and the serverless function stays alive until the attestation lands |
@@ -251,7 +253,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
 | Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | RESOLVED Sep 24 — all four direct adapters pass `spike-exchanges-direct.ts` (Binance and OKX shapes, written from docs, confirmed correct), and from Vercel Binance answers in 55 ms, OKX in 251 ms. Earlier note: INTERMITTENT — later the same day Binance answered live checks and coinbase.com resolved (32/32 registry domains reachable), so this looks like flaky ISP DNS, not a hard block. OKX still unconfirmed. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
-| Sep 23 | **Anthropic account has no credit** | OPEN — Sam. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
+| Sep 23 | **Anthropic account has no credit** | OPEN — Sam. Re-confirmed Sep 24 with raw calls: `GET /v1/models` → 200 (key valid, lists claude-sonnet-5), `POST /v1/messages` → 400 "credit balance is too low" on org `c6416967-254c-4186-9da6-7d395f02c2c7` for every model. A Claude.ai subscription does not fund the API. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
 | Sep 23 | Sandboxed dev server can't make outbound TLS calls | ENVIRONMENT ONLY. The Claude preview tool runs the server in a sandbox whose TLS interception breaks Upstash and Anthropic ("unable to verify the first certificate"). Run `pnpm start` normally — outside the sandbox everything works |
 | Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
 
