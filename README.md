@@ -72,6 +72,10 @@ place Obelus can catch the flagship scam: a real ticker attached to a different 
 Future-tense claims ("will list on Binance next month") are marked unverified `FUTURE_CLAIM`, and Obelus
 also shows what the exchange says today.
 
+You can also just ask: **"Is $PEPE listed on MEXC?"** or **"is $BTC listed?"**. Code reads the ticker and
+the exchanges named (all six if none are named) and asks each exchange's API directly, with no model
+call. The answer comes back as a normal report, one card per exchange, with the same proof links.
+
 ## Real runs
 
 I ran Obelus through the live site on 22 real announcements from Chainwire, openPR, CoinGabbar,
