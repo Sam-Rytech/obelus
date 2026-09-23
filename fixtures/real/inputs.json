@@ -1,0 +1,17 @@
+[
+  { "label": "WEEX — new listings page (exchange's own announcements)", "kind": "exchange", "input": "https://www.weex.com/wiki/new-listings" },
+  { "label": "Chainwire — Trusted Smart Chain completes CertiK audit", "kind": "press-release", "input": "https://chainwire.org/2026/01/18/trusted-smart-chain-completes-certik-audit-advancing-secure-rwa-tokenization/" },
+  { "label": "Chainwire — MyTonWallet rebrands to My Wallet", "kind": "press-release", "input": "https://chainwire.org/2026/06/23/mytonwallet-rebrands-to-my-wallet-after-expanding-to-11-blockchains/" },
+  { "label": "openPR — CertiK-audited Remittix advances PayFi platform", "kind": "press-release", "input": "https://www.openpr.com/news/4636329/crypto-security-returns-to-the-spotlight-as-certik-audited" },
+  { "label": "openPR — Remittix nears listing-date reveal", "kind": "press-release", "input": "https://www.openpr.com/news/4641549/bitcoin-etf-inflows-hit-999-million-as-remittix-nears-its" },
+  { "label": "openPR — Remittix crypto-to-bank vision", "kind": "press-release", "input": "https://www.openpr.com/news/4641507/crypto-news-today-cftc-sends-rules-to-white-house-as-remittix" },
+  { "label": "openPR — Binance listing tokens / Remittix", "kind": "press-release", "input": "https://www.openpr.com/news/4636701/binance-listing-tokens-reward-early-buyers-could-remittix-be" },
+  { "label": "openPR — IONIX AI CHAIN presale", "kind": "press-release", "input": "https://www.openpr.com/news/4636698/top-best-crypto-presales-2026-as-ionix-ai-chain-secures-attention" },
+  { "label": "openPR — Pepeto, CertiK audits and L2s", "kind": "press-release", "input": "https://www.openpr.com/news/4444169/best-crypto-presale-certik-audits-and-layer-2-chains-fill" },
+  { "label": "openPR — Remittix, Solana, HYPE", "kind": "press-release", "input": "https://www.openpr.com/news/4641631/next-crypto-to-make-you-rich-remittix-solana-and-hype-as" },
+  { "label": "CoinGabbar — Wallitelli listing on KuCoin, HTX, MEXC, BingX", "kind": "news", "input": "https://www.coingabbar.com/en/crypto-currency-news/wallitelli-listing-kucoin-htx-mexc-bingx-may-28-2026" },
+  { "label": "CoinGabbar — Celia listing on BingX and MEXC", "kind": "news", "input": "https://www.coingabbar.com/en/crypto-currency-news/celia-listing-exchange-bingx-mexc-set-will-binance-list-2026" },
+  { "label": "CoinGabbar — Based token launch on Bybit and MEXC", "kind": "news", "input": "https://www.coingabbar.com/en/crypto-currency-news/based-token-launch-march-30-bybit-mexc-price-prediction" },
+  { "label": "BingX Learn — top Base AI agent projects", "kind": "exchange", "input": "https://bingx.com/en/learn/article/top-ai-agent-projects-in-base-ecosystem" },
+  { "label": "Cryptopolitan — BingX TradFi integration", "kind": "news", "input": "https://www.cryptopolitan.com/bingx-tradfi-fully-integrated-into-the-bingx-ecosystem-forming-a-key-pillar-for-2026/" }
+]

@@ -12,6 +12,7 @@
 import { Bot, type Context } from "grammy";
 
 import type { Report, Verdict } from "../lib/schema";
+import { tally } from "../lib/summary";
 
 export type BotDeps = {
   token: string;
@@ -57,13 +58,14 @@ const PRIORITY: Record<Verdict, number> = { CONTRADICTED: 0, VERIFIED: 1, UNVERI
 
 /** Pure: the reply for a finished report. Exported for tests. */
 export function formatReport(report: Report, baseUrl: string): string {
-  const n = (v: Verdict) => report.results.filter((r) => r.verdict === v).length;
+  const t = tally(report.results);
   const name = report.project.name ?? report.project.ticker ?? "this announcement";
   const byId = new Map(report.claims.map((c) => [c.id, c]));
 
   const lines = [
     `<b>${escapeHtml(name)}</b>${report.project.ticker && report.project.name ? ` (${escapeHtml(report.project.ticker)})` : ""}`,
-    `※ ${n("VERIFIED")} verified   ÷ ${n("CONTRADICTED")} contradicted   ? ${n("UNVERIFIED")} unverified`,
+    `※ ${t.verified} verified   ÷ ${t.contradicted} contradicted   ? ${t.unverified} unverified` +
+      (t.notCheckable ? `   (${t.notCheckable} not checkable yet)` : ""),
   ];
 
   if (/TEST ANNOUNCEMENT\s*[—-]\s*written by the Obelus team/i.test(report.input.fetchedText)) {

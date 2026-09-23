@@ -24,20 +24,42 @@ function plainReason(reason: string): string {
   return i === -1 ? reason : reason.slice(i + 3);
 }
 
+/**
+ * Verdict counts for people. "Not checkable" (NOT_CHECKABLE_V1: user counts, roadmap
+ * promises…) is still an UNVERIFIED verdict — the stored results and receipts don't
+ * change — but it is shown separately: on the first 11 real announcements, 47 of 60
+ * "unverified" claims were of this kind, and one lumped count made every report look
+ * far weaker than its checkable claims actually were.
+ */
+export type Tally = { verified: number; contradicted: number; unverified: number; notCheckable: number };
+
+export function isNotCheckable(r: Pick<CheckResult, "verdict" | "reason">): boolean {
+  return r.verdict === "UNVERIFIED" && r.reason.startsWith("NOT_CHECKABLE_V1");
+}
+
+export function tally(results: Pick<CheckResult, "verdict" | "reason">[]): Tally {
+  const t: Tally = { verified: 0, contradicted: 0, unverified: 0, notCheckable: 0 };
+  for (const r of results) {
+    if (r.verdict === "VERIFIED") t.verified++;
+    else if (r.verdict === "CONTRADICTED") t.contradicted++;
+    else if (isNotCheckable(r)) t.notCheckable++;
+    else t.unverified++;
+  }
+  return t;
+}
+
 export function summarize(project: Project, claims: Claim[], results: CheckResult[]): string {
   if (claims.length === 0) {
     return `Obelus found no checkable factual claims in this announcement about ${projectLabel(project)}.`;
   }
 
   const byId = new Map(claims.map((c) => [c.id, c]));
-  const count = (v: CheckResult["verdict"]) => results.filter((r) => r.verdict === v).length;
-  const verified = count("VERIFIED");
-  const contradicted = count("CONTRADICTED");
-  const unverified = count("UNVERIFIED");
+  const t = tally(results);
 
   const parts: string[] = [
     `Obelus checked ${claims.length} claim${claims.length === 1 ? "" : "s"} about ${projectLabel(project)}: ` +
-      `${verified} verified, ${contradicted} contradicted, ${unverified} unverified.`,
+      `${t.verified} verified, ${t.contradicted} contradicted, ${t.unverified} unverified` +
+      (t.notCheckable ? `, and ${t.notCheckable} of a kind Obelus can't check yet.` : "."),
   ];
 
   // Lead with what's false: that is what a reader most needs before acting.
@@ -54,7 +76,7 @@ export function summarize(project: Project, claims: Claim[], results: CheckResul
     );
   }
 
-  if (unverified) {
+  if (t.unverified) {
     parts.push(
       `Unverified means no primary source could confirm it — not that it is false.`,
     );

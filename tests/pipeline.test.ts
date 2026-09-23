@@ -188,3 +188,25 @@ describe("checkPhaseTimeout", () => {
     expect(checkPhaseTimeout(58_000)).toBe(5_000);
   });
 });
+
+describe("tally", () => {
+  it("counts not-checkable claims separately from unverified ones", async () => {
+    const { tally } = await import("../src/lib/summary");
+    const t = tally([
+      { verdict: "VERIFIED", reason: "X — y" },
+      { verdict: "UNVERIFIED", reason: "NOT_CHECKABLE_V1 — no source" },
+      { verdict: "UNVERIFIED", reason: "NOT_CHECKABLE_V1 — no source" },
+      { verdict: "UNVERIFIED", reason: "NO_PARTNER_CONFIRMATION — z" },
+    ]);
+    expect(t).toEqual({ verified: 1, contradicted: 0, unverified: 1, notCheckable: 2 });
+  });
+
+  it("says so in the summary instead of calling them unverified", () => {
+    const s = summarize({ chain: "base", name: "N" }, [claims[0], claims[1]] as never, [
+      { claimId: "x", verdict: "UNVERIFIED", reason: "NOT_CHECKABLE_V1 — none", evidence: [] },
+      { claimId: "y", verdict: "VERIFIED", reason: "R — r", evidence: [] },
+    ]);
+    expect(s).toContain("1 verified, 0 contradicted, 0 unverified, and 1 of a kind Obelus can't check yet");
+    expect(s).not.toContain("Unverified means");
+  });
+});

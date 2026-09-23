@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { easChainById } from "@/src/lib/chains";
 import type { CheckResult, Claim, ClaimType, Report, Verdict } from "@/src/lib/schema";
 import { getReport } from "@/src/lib/store";
+import { tally } from "@/src/lib/summary";
 
 import { ShareButton } from "../../_components/ShareButton";
 import { Sign, Stamp } from "../../_components/Sign";
@@ -38,9 +39,10 @@ function code(reason: string) {
   return reason.split(/[ —:]/)[0] ?? reason;
 }
 
+/** "Not checkable yet" is split from "unverified" for readers; see src/lib/summary.ts. */
 function counts(results: CheckResult[]) {
-  const n = (v: Verdict) => results.filter((r) => r.verdict === v).length;
-  return { VERIFIED: n("VERIFIED"), CONTRADICTED: n("CONTRADICTED"), UNVERIFIED: n("UNVERIFIED") };
+  const t = tally(results);
+  return { VERIFIED: t.verified, CONTRADICTED: t.contradicted, UNVERIFIED: t.unverified, NOT_CHECKABLE: t.notCheckable };
 }
 
 function projectTitle(r: Report) {
@@ -159,6 +161,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <span data-verdict="UNVERIFIED">
           <Sign verdict="UNVERIFIED" /> {c.UNVERIFIED} unverified
         </span>
+        {c.NOT_CHECKABLE > 0 && <span className="meta">{c.NOT_CHECKABLE} not checkable yet</span>}
       </p>
 
       <p className="summary">{report.summary}</p>
