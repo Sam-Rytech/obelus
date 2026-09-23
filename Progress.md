@@ -136,13 +136,13 @@ Each spike prints the raw response shape and writes a note in **Spike results** 
 
 ## Day 5 — Sat Sep 26: demo content, polish, SUBMIT
 
-- [ ] Run Obelus on 15–30 real announcements (PR wires, X posts about Base tokens); record totals for the description (claims checked / verified / contradicted / unverified)
-- [ ] Pick Example A (real, clean), Example B (real, mixed), Example C (**labeled** test announcement) — pre-run, pin on home page
-- [ ] README: what it is, how it works, sources table, principle, "not built in v1", run locally, env vars, architecture diagram
+- [x] Run Obelus on 15–30 real announcements (PR wires, X posts about Base tokens); record totals for the description (claims checked / verified / contradicted / unverified) — 22 run, `fixtures/real/results*.json`
+- [x] Pick Example A (real, clean), Example B (real, mixed), Example C (**labeled** test announcement) — pre-run, pin on home page
+- [x] README: what it is, how it works, sources table, principle, "not built in v1", run locally, env vars, architecture diagram
 - [ ] Demo video 2–3 min: problem (20 s) → paste live → stamps + BingX/WEEX proof (60 s) → receipt on Base (20 s) → Telegram `/check` (20 s) → what's next (20 s). 720p+. Upload to YouTube (unlisted is fine)
 - [ ] X profile: pinned post with video + link. Telegram channel: pinned link
 - [ ] Clean-browser dry run of the demo link
-- [ ] Write submission description (architecture §19 structure)
+- [x] Write submission description (architecture §19 structure) — `docs/submission.md`; video script in `docs/demo-script.md`
 - [ ] **Submit from the registered wallet; pay ignition fee (~$10 ETH)**
 - [ ] Post in Orion community channels + X; ask network to upvote
 
@@ -195,7 +195,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Tavily | Works — `include_domains` is a hard restriction | Sep 23, `spike-tavily.ts`, ~3 credits. Every result for "Aave" on `chain.link` was on-domain. **Three findings for Day 3:** (1) Tavily *always* returns results — 5 for a fabricated project, 0 of which mention it — so `partnership.ts` must match the project name in the content; counting results would verify every claim. (2) **A mention is not a partnership:** all the Aave hits were Chainlink *price-feed pages*, so under §10.5 as written any token with a Chainlink feed would verify "partnered with Chainlink". Needs a design decision. (3) The CertiK fallback returns unrelated slugs next to the right one (`pancakeswap, four-meme, solidus-ai-tech…`), so it must pick by name. Latency 6–11 s per search from Lagos — over the 8 s ceiling. |
 | Upstash Redis | Works through `cache.ts` | Sep 23, `spike-upstash.ts`. Backend auto-selected from env; objects round-trip intact; TTL applied; `cached()` served a second call from Redis across a fresh backend instance — i.e. across serverless invocations. First set+get 4.8 s cold from Lagos; place the DB in the Vercel region. |
 | Exchanges (direct REST) | 2/4 verified here — **replaces CCXT** | Sep 23. CCXT measured unusable: `gate.loadMarkets()` **46.5 s** + 10.8 s `fetchCurrencies` (vs a 60 s pipeline), kucoin 4.1 s, bitget 5.0 s, binance 5.8 s (vs an 8 s per-call ceiling). Direct single-symbol REST instead: **MEXC** `api/v3/exchangeInfo?symbol=` 921 B / 171 ms warm, **Bybit** `api.bytick.com/v5/market/instruments-info` 637 B / 1.4 s warm. **Binance and OKX are DNS-blocked from this network** on every documented host (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`) — adapters ship with runtime shape validation so a mismatch degrades to UNVERIFIED. None of the four publishes a contract address. |
-| Registry domains | 19/21 reachable | Sep 23, `scripts/verify-domains.ts`. `certik.com` times out but `www.certik.com` serves 200 — registry updated. **`coinbase.com` and `www.coinbase.com` fail DNS** from this network, same pattern as Binance/OKX; the entry carries an explicit note instead of a verification date. |
+| Registry domains | 19/21 reachable → 70/70 | Sep 23, `scripts/verify-domains.ts`. `certik.com` times out but `www.certik.com` serves 200 — registry updated. **`coinbase.com` and `www.coinbase.com` fail DNS** from this network, same pattern as Binance/OKX; the entry carries an explicit note instead of a verification date. **Sep 23 (later):** partners expanded to 50; 58/70 domains reachable from Lagos, and the 12 that failed were re-checked from production (fra1) through a temporary operator-only route, now removed: 11 answer 200/202, coinbase.com answers 403 (Cloudflare bot wall, site live). |
 
 ---
 
@@ -249,6 +249,8 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 24 | Receipts written in Next's `after()` | The user gets their link without waiting on gas (§11), and the serverless function stays alive until the attestation lands |
 | Sep 24 | Health panel never reports a key as "up" | "Anthropic is answering" was showing while the account had no credit. Anthropic now gets a real 1-token probe; Tavily shows "set up, not called" |
 | Sep 24 | Attester wallet generated locally | Key written straight to .env.local and Vercel (sensitive); only the address was ever printed |
+| Sep 23 | Partner registry expanded 15 → 50 | The first real-announcement batch showed most checkable claims were unverified only because the partner wasn't registered (XDC, Ondo, Upbit, BitGo, LambdaClass…). Every domain checked live; ones the dev ISP blocks were checked from fra1 |
+| Sep 23 | Day 5 examples: A = Trusted Smart Chain (CertiK ✓), B = Aligned (LambdaClass ✓ + unverified), C = labelled AERO test | Real examples chosen so nothing on the home page reads as an accusation against a real project; the one contradiction is on the labelled test. Remittix ("CertiK-audited", no CertiK record) is unverified, not false, so it isn't featured |
 | Sep 23 | Partner registry limited to a verified top 15, not the ~50 in §9 | Each domain must be visited first, and the partnership checker treats a partner-domain page as proof. Unknown partners return UNVERIFIED, so coverage grows later without any logic change |
 
 ---
@@ -269,15 +271,18 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 ---
 
 ## Status
-**Current phase:** Day 4 complete and live end to end — **https://obelus-five.vercel.app**.
+**Current phase:** Day 5 — demo content done; submission waits on Sam's items below.
+**Live:** https://obelus-five.vercel.app
 
-**Done Sep 24:** web UI, report/verify/method pages, EAS receipts (proven on Base Sepolia, including
-tamper detection), @Obelus_the_Bot on Telegram, health panel, and — with extraction moved to Gemini —
-the first fully live checks. 178 tests.
+**Done Sep 23 (Day 5):** 22 real announcements run through the live site: 20 checked, 104 claims, 34
+checkable → 3 verified, 0 contradicted, 31 unverified, 70 not checkable yet, 0 source errors, median
+3–5 s. Partner registry 15 → 50. Examples A/B/C pinned on the home page. README, `docs/submission.md`,
+`docs/demo-script.md`. 190 tests.
 
 **Still open — Sam:** receipts to Base **mainnet** (~$2 ETH to `0x1027Ab454ef4a85271e997957a2a0A12d059F46C`,
-then `EAS_CHAIN=base` and one registration); X account; public Telegram channel; make the repo public;
-~$12 in the registered wallet for the ignition fee. Nice to have: Alchemy RPC URL, Team Finance locker.
+then `EAS_CHAIN=base`, `register-schema --send`, and re-attest the three example reports with
+`scripts/attest-report.ts`); X account; public Telegram channel; make the repo public; record the video;
+~$12 in the registered wallet for the ignition fee; submit. Nice to have: Alchemy RPC URL, Team Finance
+locker.
 
-**Next task — build:** Day 5 — run Obelus on 15–30 real announcements, pick Examples A and B (pre-run and
-pinned), README, demo-video script, submission text.
+**Next task — build:** clean-browser dry run of the demo link; fix only what breaks.

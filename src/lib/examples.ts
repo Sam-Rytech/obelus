@@ -1,9 +1,9 @@
 /**
  * One-click examples on the home page — architecture §15.
  *
- * Only examples that genuinely exist are listed. Example A (a real, clean announcement)
- * and Example B (a real, mixed one) are found on Day 5 by running Obelus on real press
- * releases; they are added here then, with a `reportId` so the page loads instantly.
+ * Examples A (a real, clean announcement) and B (a real, mixed one) were picked on Day 5
+ * from 22 real announcements run through the live site (fixtures/real/results*.json).
+ * Each carries a `reportId` so the page loads instantly.
  *
  * Example C is synthetic and MUST stay labelled as such (§15): it is about a real Base
  * token but was written by the Obelus team to show all three verdicts at once, and must
@@ -37,10 +37,27 @@ AERO will be listed on Binance next month.`;
 
 export const EXAMPLES: Example[] = [
   {
+    id: "a",
+    label: "A real audit announcement",
+    note: "Trusted Smart Chain's press release, checked against CertiK's own page.",
+    input: "https://chainwire.org/2026/01/18/trusted-smart-chain-completes-certik-audit-advancing-secure-rwa-tokenization/",
+    synthetic: false,
+    reportId: "5zvwvrM6FR",
+  },
+  {
+    id: "b",
+    label: "A real token launch",
+    note: "Aligned's launch press release: one claim confirmed, the rest can't be yet.",
+    input: "https://chainwire.org/2026/08/21/aligned-launches-align-the-native-token-of-its-full-ethereum-stack/",
+    synthetic: false,
+    reportId: "f0uh4Plxvf",
+  },
+  {
     id: "test",
     label: "Try a test announcement",
     note: "Written by the Obelus team about a real Base token, mixing true and false claims.",
     input: TEST_ANNOUNCEMENT,
     synthetic: true,
+    reportId: "srezxyJ1aX",
   },
 ];
