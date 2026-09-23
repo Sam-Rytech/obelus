@@ -136,6 +136,10 @@ export class GeminiLlm implements Llm {
           // JSON mode only; no responseSchema, because per-type `params` vary and Zod
           // validates the shape afterwards regardless of provider.
           ...(json ? { responseMimeType: "application/json" } : {}),
+          // Extraction is copying, not reasoning. Measured Sep 24: gemini-3.6-flash spent
+          // 2,655 tokens thinking by default (15.9 s); at "low" it spent 0 and answered
+          // the same claims in 3.6 s. The default thinking is what timed out production.
+          thinkingConfig: { thinkingLevel: "low" },
         },
       }),
       signal: AbortSignal.timeout(this.timeoutMs),
@@ -221,9 +225,9 @@ export function createLlm(): Llm {
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean);
-    // Split the pipeline's budget: a slow primary must leave the fallback time to run.
-    const perModel = models.length > 1 ? 25_000 : 45_000;
-    const chain = models.map((m) => new GeminiLlm(key, m, perModel));
+    // The primary normally answers in ~4 s, so 12 s means it's overloaded: move on while
+    // the fallback (Flash-Lite, 18–29 s measured) still has time inside Vercel's 60 s.
+    const chain = models.map((m, i) => new GeminiLlm(key, m, models.length === 1 ? 40_000 : i === 0 ? 12_000 : 28_000));
     return chain.length === 1 ? chain[0]! : new FallbackLlm(chain);
   }
   const key = process.env.ANTHROPIC_API_KEY;

@@ -42,6 +42,8 @@ describe("GeminiLlm", () => {
     expect(body.systemInstruction.parts[0].text).toBe("sys");
     expect(body.generationConfig.responseMimeType).toBe("application/json");
     expect(body.generationConfig.temperature).toBe(0);
+    // Default thinking made production time out (2,655 thinking tokens, 15.9 s).
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
   });
 
   it("returns the text of the first candidate", async () => {

@@ -27,6 +27,18 @@ import { Trace, type TraceEvent } from "./trace";
 
 /** Per-claim ceiling. Checks run in parallel, so this bounds the check phase too. */
 export const CLAIM_TIMEOUT_MS = 20_000;
+
+/**
+ * Vercel kills the function at 60 s (§18). Everything must be DONE — report hashed and
+ * stored — before that, so the check phase gets whatever time extraction left over,
+ * never less than a short floor that still lets cached/fast sources answer.
+ */
+export const PIPELINE_BUDGET_MS = 52_000;
+const MIN_CHECK_MS = 5_000;
+
+export function checkPhaseTimeout(elapsedMs: number, preferred = CLAIM_TIMEOUT_MS): number {
+  return Math.max(MIN_CHECK_MS, Math.min(preferred, PIPELINE_BUDGET_MS - elapsedMs));
+}
 export const CALL_TIMEOUT_MS = 8_000;
 
 /** Claim types whose checkers read the token contract. */
@@ -75,6 +87,7 @@ async function runChecker(checker: Checker, claim: Claim, ctx: Ctx, project: Rep
 }
 
 export async function runPipeline(input: string, opts: PipelineOptions = {}): Promise<Report> {
+  const started = Date.now();
   const trace = new Trace();
   if (opts.onTrace) trace.onStep(opts.onTrace);
   const ctx: Ctx = {
@@ -133,7 +146,7 @@ export async function runPipeline(input: string, opts: PipelineOptions = {}): Pr
   }
 
   // 4. CHECK — in parallel, every claim guaranteed a result
-  const timeoutMs = opts.claimTimeoutMs ?? CLAIM_TIMEOUT_MS;
+  const timeoutMs = opts.claimTimeoutMs ?? checkPhaseTimeout(Date.now() - started);
   const results = await Promise.all(claims.map((c) => runChecker(checkers[c.type], c, ctx, project, timeoutMs)));
   trace.step(`Checked ${claims.length} claim${claims.length === 1 ? "" : "s"} using ${ctx.budget.spent} of ${DEFAULT_BUDGET} source calls`);
 

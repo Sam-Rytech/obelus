@@ -171,3 +171,20 @@ describe("chooseToken (contract resolution)", () => {
     expect(r.candidates).toHaveLength(0);
   });
 });
+
+describe("checkPhaseTimeout", () => {
+  it("gives checks their full 20 s when extraction was quick", async () => {
+    const { checkPhaseTimeout } = await import("../src/lib/pipeline");
+    expect(checkPhaseTimeout(4_000)).toBe(20_000);
+  });
+
+  it("shrinks the check phase when extraction ran long, to finish inside Vercel's 60 s", async () => {
+    const { checkPhaseTimeout, PIPELINE_BUDGET_MS } = await import("../src/lib/pipeline");
+    expect(checkPhaseTimeout(40_000)).toBe(PIPELINE_BUDGET_MS - 40_000);
+  });
+
+  it("never drops below a floor that lets fast or cached sources answer", async () => {
+    const { checkPhaseTimeout } = await import("../src/lib/pipeline");
+    expect(checkPhaseTimeout(58_000)).toBe(5_000);
+  });
+});
