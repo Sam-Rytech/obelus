@@ -3,8 +3,9 @@
  *
  * One cheap probe per upstream, in parallel, 6 s each, cached 60 s per instance.
  * Tavily is reported as "configured" and never called, so a status page can't burn
- * search credits; a key being present is never reported as "up". Anthropic gets a real
- * 1-token probe, because the extractor is the step every check depends on.
+ * search credits; a key being present is never reported as "up". The ACTIVE extractor
+ * gets a real probe, because it's the step every check depends on: Gemini via the free
+ * models.get (no quota spent), Anthropic via a 1-token call.
  */
 import { Redis } from "@upstash/redis";
 import { createPublicClient, formatEther, http, type Hex } from "viem";
@@ -12,6 +13,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { currentEasChain, easRpcUrl } from "@/src/lib/chains";
+import { llmModel, llmProvider } from "@/src/lib/llm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,13 +107,38 @@ async function runProbes(): Promise<Probe[]> {
       : Promise.resolve(configured("eas", "EAS", receiptRole, false)),
   );
 
-  // The extractor is the one step every check needs, so it gets a real probe: a
-  // 1-token call (a tiny fraction of a cent, at most once a minute per instance). It
-  // catches what a key-present check can't — e.g. an account with no credit.
+  // The extractor is the one step every check needs, so it gets a real probe — for
+  // whichever provider is ACTIVE (LLM_PROVIDER), not every provider with a key.
+  const role = "Reading claims out of the text";
+  const provider = llmProvider();
+  const geminiKey = process.env.GEMINI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  probes.push(
+
+  if (provider === "gemini") {
+    // models.get is free and doesn't touch the generation quota, so a status page can
+    // never eat into the free tier. It proves the key and the primary model are valid.
+    const primary = llmModel("gemini").split(",")[0]!.trim();
+    probes.push(
+      geminiKey
+        ? probe("gemini", `Gemini (${primary})`, role, async () => {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${primary}`, {
+              headers: { "x-goog-api-key": geminiKey },
+              signal: AbortSignal.timeout(TIMEOUT),
+              cache: "no-store",
+            });
+            if (res.ok) return { ok: true, detail: "key and model valid (quota not spent checking)" };
+            const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+            return { ok: false, detail: body?.error?.message?.slice(0, 80) ?? `HTTP ${res.status}` };
+          })
+        : Promise.resolve(configured("gemini", "Gemini", role, false)),
+    );
+  }
+
+  // Anthropic: a 1-token call (a tiny fraction of a cent, at most once a minute per
+  // instance), which catches what a key-present check can't — e.g. an org with no credit.
+  if (provider === "anthropic") probes.push(
     anthropicKey
-      ? probe("anthropic", "Anthropic", "Reading claims out of the text", async () => {
+      ? probe("anthropic", "Anthropic", role, async () => {
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: { "x-api-key": anthropicKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -126,7 +153,7 @@ async function runProbes(): Promise<Probe[]> {
           const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
           return { ok: false, detail: body?.error?.message?.slice(0, 80) ?? `HTTP ${res.status}` };
         })
-      : Promise.resolve(configured("anthropic", "Anthropic", "Reading claims out of the text", false)),
+      : Promise.resolve(configured("anthropic", "Anthropic", role, false)),
   );
 
   const results = await Promise.all(probes);

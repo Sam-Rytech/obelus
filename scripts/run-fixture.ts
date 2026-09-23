@@ -1,7 +1,7 @@
 /**
  * Run the real pipeline from the CLI — Progress.md Day 2/3.
  *
- *   pnpm fixture fixtures/sample1.txt            model extraction (needs Anthropic credit)
+ *   pnpm fixture fixtures/sample1.txt            model extraction (LLM_PROVIDER: gemini or anthropic)
  *   pnpm fixture fixtures/sample1.txt --offline  regex claim detection stands in for the model
  *   pnpm fixture "https://x.com/i/status/20"
  *   pnpm fixture --text "NOVA is now listed on WEEX" --offline
@@ -13,7 +13,7 @@
  */
 import { readFileSync } from "node:fs";
 
-import { llmConfigured, StubLlm, type Llm } from "../src/lib/llm";
+import { createLlm, llmConfigured, StubLlm, type Llm } from "../src/lib/llm";
 import { runPipeline } from "../src/lib/pipeline";
 import { reportHash } from "../src/lib/hash";
 
@@ -72,7 +72,8 @@ async function main() {
     llm = new StubLlm([offlineExtraction(input)]);
     console.log("mode: OFFLINE extraction (regex stand-in for the model); everything else is live\n");
   } else {
-    console.log(`mode: model extraction (${process.env.LLM_MODEL ?? "claude-sonnet-5"})\n`);
+    llm = createLlm();
+    console.log(`mode: model extraction (${llm.name})\n`);
   }
 
   const started = Date.now();

@@ -150,7 +150,13 @@ export function applyGuards(raw: string, sourceText: string): ExtractionResult {
     }
 
     const paramSchema = ClaimParams[candidate.type];
-    const params = paramSchema.safeParse(candidate.params ?? {});
+    // The prompt itself tells the model to write null for a missing optional field
+    // ("market": ... |null). Treat null as absent; otherwise the guard drops claims the
+    // model got exactly right — the first Gemini run lost every listing and TVL claim.
+    const cleaned = Object.fromEntries(
+      Object.entries(candidate.params ?? {}).filter(([, v]) => v !== null),
+    );
+    const params = paramSchema.safeParse(cleaned);
     if (!params.success) {
       dropped.push({
         quote: candidate.quote,
@@ -195,6 +201,7 @@ export async function extract(llm: Llm, sourceText: string): Promise<ExtractionR
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: `${OPEN}\n${sourceText}\n${CLOSE}` }],
     temperature: 0,
+    json: true,
   });
   return applyGuards(raw, sourceText);
 }

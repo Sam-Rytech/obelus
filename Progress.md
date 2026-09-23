@@ -236,6 +236,8 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 23 | Lock reads via one Multicall3 call; RPC client retries with backoff | Public Base RPC returns 429 beyond ~5 concurrent requests; batching didn't help |
 | Sep 23 | GitHub-hosted auditor repos not registered | Domain check is by hostname, so `github.com` would let any repo speak for PeckShield or Trail of Bits |
 | Sep 23 | Relative imports without `.js` | Next's webpack can't map `.js` → `.ts`; extensionless works in Next, tsc, tsx and vitest alike |
+| Sep 24 | **Extraction on Gemini** (Sam's call), `gemini-3.6-flash` → `gemini-3.5-flash-lite` fallback | Anthropic org has no API credit. Compared on the test announcement: 3.6-flash 11.8 s with whole-sentence quotes, Flash-Lite 19.3 s with fragments; both 8/8 through the guard. Fallback covers the smaller free quota of newer Flash models and 503 overloads (seen on 3.8-flash); `gemini-2.5-flash` is retired for new users |
+| Sep 24 | `null` optional params treated as absent | The prompt tells the model to write `null` for a missing optional field, but the schema rejected null — the first Gemini run lost every listing and TVL claim. Would have hit Anthropic too |
 | Sep 24 | Test receipts on Base Sepolia before mainnet (Sam's call) | Proves registration → attestation → verify for free. Receipts record their network; testnet ones are labelled on the report |
 | Sep 24 | UI direction "scholar's margin" (Sam's pick) | Verdicts as the ancient critical signs: Origen's asteriskos ※ for text attested by the source, Aristarchus's obelus ÷ for lines that don't hold up. Makes the product's name visible |
 | Sep 24 | EAS via viem, not `@ethereum-attestation-service/eas-sdk` + ethers | One `attest()` call doesn't justify a second web3 stack; viem also runs in the browser for the verify page |
@@ -255,25 +257,22 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 22 | UNCX's published "Base (Uniswap V2)" locker has no code on Base | LOGGED, handled. `0xED9180976c2a4742C7A57354FD39d8BEc6cbd8AB` is excluded from the registry and asserted absent by a test. Uniswap-V2-locked projects on Base therefore read UNVERIFIED until a correct address is confirmed |
 | Sep 22 | `registry.npmjs.org` is unreachable from the sandboxed shell | RESOLVED. `pnpm install` must run with the sandbox disabled; other hosts are unaffected. Large binaries also need `--fetch-timeout 600000` |
 | Sep 23 | **`api.binance.com`, `www.okx.com`, `coinbase.com` fail DNS from this network** | RESOLVED Sep 24 — all four direct adapters pass `spike-exchanges-direct.ts` (Binance and OKX shapes, written from docs, confirmed correct), and from Vercel Binance answers in 55 ms, OKX in 251 ms. Earlier note: INTERMITTENT — later the same day Binance answered live checks and coinbase.com resolved (32/32 registry domains reachable), so this looks like flaky ISP DNS, not a hard block. OKX still unconfirmed. Every documented alternate host also fails (`data-api.binance.vision`, `api1`/`api-gcp.binance.com`, `api.binance.us`, `aws.okx.com`). Bybit works via `api.bytick.com`. The Binance/OKX adapters ship with runtime shape validation, so a wrong shape degrades to UNVERIFIED rather than a wrong verdict. **To resolve:** run `pnpm spike scripts/spike-exchanges-direct.ts` and `scripts/verify-domains.ts` from Vercel once deployed, or from a different network/mobile data |
-| Sep 23 | **Anthropic account has no credit** | OPEN — Sam. Re-confirmed Sep 24 with raw calls: `GET /v1/models` → 200 (key valid, lists claude-sonnet-5), `POST /v1/messages` → 400 "credit balance is too low" on org `c6416967-254c-4186-9da6-7d395f02c2c7` for every model. A Claude.ai subscription does not fund the API. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
+| Sep 23 | **Anthropic account has no credit** | WORKED AROUND Sep 24 — extraction moved to Gemini's free tier. Anthropic stays selectable via `LLM_PROVIDER=anthropic` if credit is added. Original note: Re-confirmed Sep 24 with raw calls: `GET /v1/models` → 200 (key valid, lists claude-sonnet-5), `POST /v1/messages` → 400 "credit balance is too low" on org `c6416967-254c-4186-9da6-7d395f02c2c7` for every model. A Claude.ai subscription does not fund the API. The key is valid (auth passes; a bad key would be 401), but every call returns 400 "credit balance is too low". Blocks live extraction only; everything else runs. Buy credits under console.anthropic.com → Plans & Billing |
 | Sep 23 | Sandboxed dev server can't make outbound TLS calls | ENVIRONMENT ONLY. The Claude preview tool runs the server in a sandbox whose TLS interception breaks Upstash and Anthropic ("unable to verify the first certificate"). Run `pnpm start` normally — outside the sandbox everything works |
 | Sep 23 | BingX served 0-byte responses for ~15 min | TRANSIENT, self-healing. Reproduced across user-agents and with no UA, ~12 s then empty; the same endpoint worked earlier the same day. The checker fails closed with `SOURCE_ERROR:bingx`, and the 10-minute cache means one success covers many requests. Watch it before the demo |
 
 ---
 
 ## Status
-**Current phase:** Day 4 built and deployed — **https://obelus-five.vercel.app**. Three external steps left.
+**Current phase:** Day 4 complete and live end to end — **https://obelus-five.vercel.app**.
 
-**Done Sep 24:** the full web UI (home, report, verify, method + live source status), EAS receipts and
-schema registration, the Telegram bot, the health endpoint, and a production deploy with every data source
-answering from Vercel's network. 162 tests.
+**Done Sep 24:** web UI, report/verify/method pages, EAS receipts (proven on Base Sepolia, including
+tamper detection), @Obelus_the_Bot on Telegram, health panel, and — with extraction moved to Gemini —
+the first fully live checks. 178 tests.
 
-**Blocking — Sam:**
-1. **Anthropic credit** — still "credit balance is too low". Nothing can be checked live until this lands.
-2. **Fund the attester wallet** `0x1027Ab454ef4a85271e997957a2a0A12d059F46C` with ~$2 of ETH **on Base**;
-   then I register the schema (one transaction, with your OK) and set `EAS_SCHEMA_UID` on Vercel.
-3. **Telegram bot token** from @BotFather (also create the public channel/group the submission needs).
-Also still useful: an Alchemy Base RPC URL; the Team Finance locker address; make the repo public before submitting.
+**Still open — Sam:** receipts to Base **mainnet** (~$2 ETH to `0x1027Ab454ef4a85271e997957a2a0A12d059F46C`,
+then `EAS_CHAIN=base` and one registration); X account; public Telegram channel; make the repo public;
+~$12 in the registered wallet for the ignition fee. Nice to have: Alchemy RPC URL, Team Finance locker.
 
-**Next task — build:** Day 5 — run Obelus on 15–30 real announcements, pick Examples A and B, README,
-demo video, submission text.
+**Next task — build:** Day 5 — run Obelus on 15–30 real announcements, pick Examples A and B (pre-run and
+pinned), README, demo-video script, submission text.

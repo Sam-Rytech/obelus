@@ -144,7 +144,7 @@ Obelus is an agent, not a script, because it **plans and adapts per input**:
 | App | Next.js (App Router) | UI + API routes in one deploy |
 | Package manager | pnpm | Fast, reliable on Windows |
 | Validation | Zod | Every LLM output + every external response validated |
-| LLM | Anthropic API (`claude-sonnet-5`), provider-swappable | Strong structured extraction; keep an adapter so Gemini/Groq can be swapped in |
+| LLM | **Gemini** (`gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite` on quota/overload) via `LLM_PROVIDER=gemini`; Anthropic (`claude-sonnet-5`) remains selectable | Switched Sep 24: the Anthropic org has no API credit and Gemini has a free tier. Both Gemini models kept 8/8 claims through the quote guard on the test announcement; every guard after extraction is provider-independent |
 | EVM reads | viem | Base contract reads, storage slots |
 | Exchanges | direct fetch for BingX/WEEX; `ccxt` for others | BingX/WEEX public endpoints need no keys |
 | Search/extract | Tavily (`include_domains`) | Domain-restricted search = primary-source search |

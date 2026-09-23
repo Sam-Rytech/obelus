@@ -132,6 +132,40 @@ describe("param validation", () => {
     expect(out.dropped.every((d) => d.reason.startsWith("INVALID_PARAMS"))).toBe(true);
   });
 
+  it("accepts null for an optional param, exactly as the prompt instructs", () => {
+    // Regression: the prompt says `"market": "spot"|"futures"|null`, but the schema
+    // rejected null — the first live Gemini run lost every listing and TVL claim to it.
+    const out = applyGuards(
+      model({
+        project: { name: "NovaBase", ticker: "NOVA", contract: null },
+        claims: [
+          {
+            id: "c1",
+            type: "EXCHANGE_LISTING",
+            quote: "NOVA is now listed on BingX",
+            params: { exchange: "BingX", market: null, tense: "present" },
+          },
+          { id: "c2", type: "TVL", quote: "TVL has crossed $4,200,000", params: { amountUsd: 4200000, asOfText: null } },
+        ],
+      }),
+      ANNOUNCEMENT,
+    );
+    expect(out.dropped).toEqual([]);
+    expect(out.claims).toHaveLength(2);
+    expect(out.claims[0]?.params).not.toHaveProperty("market");
+  });
+
+  it("still drops a claim whose REQUIRED param is null", () => {
+    const out = applyGuards(
+      model({
+        project: { name: "NovaBase", ticker: "NOVA", contract: null },
+        claims: [{ id: "c1", type: "PARTNERSHIP", quote: "our partnership with Chainlink", params: { partner: null } }],
+      }),
+      ANNOUNCEMENT,
+    );
+    expect(out.claims).toHaveLength(0);
+  });
+
   it("keeps a well-formed TVL claim with a real number", () => {
     const out = applyGuards(
       model({
