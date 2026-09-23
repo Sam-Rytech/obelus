@@ -12,7 +12,7 @@
 import { Bot, type Context } from "grammy";
 
 import type { Report, Verdict } from "../lib/schema";
-import { tally } from "../lib/summary";
+import { looksLikeQuestion, QUESTION_HINT, tally } from "../lib/summary";
 
 export type BotDeps = {
   token: string;
@@ -82,7 +82,9 @@ export function formatReport(report: Report, baseUrl: string): string {
     if (why) lines.push(`   ${escapeHtml(short(why, 120))}`);
   }
   if (report.results.length > 3) lines.push(`…and ${report.results.length - 3} more.`);
-  if (report.claims.length === 0) lines.push("No checkable claims found.");
+  if (report.claims.length === 0) {
+    lines.push(looksLikeQuestion(report.input.fetchedText) ? escapeHtml(QUESTION_HINT) : "No checkable claims found.");
+  }
 
   lines.push("", `Full report with proof: ${baseUrl.replace(/\/$/, "")}/r/${report.id}`);
   return lines.join("\n");

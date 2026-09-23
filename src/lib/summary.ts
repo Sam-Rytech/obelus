@@ -37,6 +37,20 @@ export function isNotCheckable(r: Pick<CheckResult, "verdict" | "reason">): bool
   return r.verdict === "UNVERIFIED" && r.reason.startsWith("NOT_CHECKABLE_V1");
 }
 
+/**
+ * Obelus checks statements, and a question states nothing — "is $BTC listed?" yields no
+ * claims. Display only: used to turn the empty report into directions for what to paste.
+ */
+const QUESTION_START = /^(is|are|was|were|does|do|did|has|have|can|will|when|where|what|which|who|how|why)\b/i;
+
+export function looksLikeQuestion(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > 0 && t.length <= 280 && (t.endsWith("?") || QUESTION_START.test(t));
+}
+
+export const QUESTION_HINT =
+  "Obelus checks what an announcement claims, and a question doesn't claim anything. Paste the announcement or post that makes the claim, or its link — for example “BTC is now listed on WEEX”.";
+
 export function tally(results: Pick<CheckResult, "verdict" | "reason">[]): Tally {
   const t: Tally = { verified: 0, contradicted: 0, unverified: 0, notCheckable: 0 };
   for (const r of results) {

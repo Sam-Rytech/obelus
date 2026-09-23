@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { easChainById } from "@/src/lib/chains";
 import type { CheckResult, Claim, ClaimType, Report, Verdict } from "@/src/lib/schema";
 import { getReport } from "@/src/lib/store";
-import { tally } from "@/src/lib/summary";
+import { looksLikeQuestion, QUESTION_HINT, tally } from "@/src/lib/summary";
 
 import { ShareButton } from "../../_components/ShareButton";
 import { Sign, Stamp } from "../../_components/Sign";
@@ -192,8 +192,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
       {report.claims.length === 0 ? (
         <p className="summary">
-          No checkable claims were found. Obelus looks for exchange listings, audits, ownership, liquidity locks,
-          partnerships and TVL figures.
+          {looksLikeQuestion(report.input.fetchedText)
+            ? QUESTION_HINT
+            : "No checkable claims were found. Obelus looks for exchange listings, audits, ownership, liquidity locks, partnerships and TVL figures."}
         </p>
       ) : (
         <ol className="claims">
