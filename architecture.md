@@ -144,7 +144,7 @@ Obelus is an agent, not a script, because it **plans and adapts per input**:
 | App | Next.js (App Router) | UI + API routes in one deploy |
 | Package manager | pnpm | Fast, reliable on Windows |
 | Validation | Zod | Every LLM output + every external response validated |
-| LLM | **Gemini** (`gemini-3.5-flash-lite`, falling back to `gemini-3.6-flash`) via `LLM_PROVIDER=gemini`, thinking set to `low`; Anthropic (`claude-sonnet-5`) remains selectable | Switched Sep 24: the Anthropic org has no API credit and Gemini has a free tier. Both models kept 8/8 claims through the quote guard. Order set by latency measured *from Vercel*: Flash-Lite a steady ~18 s, 3.6-flash overloaded for US free-tier traffic (26 s, then 503) though 3.6 s from Lagos |
+| LLM | **Gemini** (`gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite`) via `LLM_PROVIDER=gemini`, thinking set to `low`; Anthropic (`claude-sonnet-5`) remains selectable | Switched Sep 24: the Anthropic org has no API credit and Gemini has a free tier. Both models kept 8/8 claims through the quote guard. **The free tier has no availability guarantee:** the same extraction took 3.6 s, then hit 503s and >90 s within hours, from Lagos and from Vercel (iad1 and fra1) alike |
 | EVM reads | viem | Base contract reads, storage slots |
 | Exchanges | direct fetch for BingX/WEEX; `ccxt` for others | BingX/WEEX public endpoints need no keys |
 | Search/extract | Tavily (`include_domains`) | Domain-restricted search = primary-source search |
