@@ -20,8 +20,8 @@ and nobody checks, because checking each claim takes an afternoon."
 
 ### 0:20 — paste and watch it check (35 s)
 
-**Screen:** paste the test announcement into Obelus and click **Check announcement**. Let the trace
-stream on screen.
+**Screen:** on the home page, paste the test announcement into the box and click **Check it**. Let the
+steps stream under the box.
 
 **Say:** "Obelus takes an X post, a link or the text. This is a test announcement we wrote about a real
 Base token, and it's labelled as a test. A model reads out each claim with its exact quote. That's all
@@ -29,20 +29,21 @@ the model does. Every verdict comes from code reading the one source that can co
 
 ### 0:55 — the marks and their proof (45 s)
 
-**Screen:** the report. Hover over each mark in turn.
+**Screen:** the report: the announcement itself, each claim highlighted, its mark in the margin. Click
+each highlight in turn; its proof opens in the panel on the right.
 
-- **WEEX listing, verified:** click the proof. "WEEX's own API lists AERO, and the contract WEEX
+- **WEEX listing, verified:** open the proof link. "WEEX's own API lists AERO, and the contract WEEX
   publishes is the one in the announcement. That's how Obelus catches the same-ticker scam."
 - **BingX listing:** "Live on BingX too, but BingX publishes no contract address, so Obelus says so
   instead of guessing."
-- **CertiK audit, contradicted:** click the proof. "CertiK's own page says 'Not Audited By CertiK'."
+- **CertiK audit, contradicted:** open the proof link. "CertiK's own page says 'Not Audited By CertiK'."
 - **Partnership, unverified:** "Chainlink's own site doesn't mention it. That's unverified, not false.
   Absence of proof is never a contradiction."
 
 ### 1:40 — the receipt on Base (20 s)
 
-**Screen:** click **view the attestation** (EAS explorer), go back, then click **Verify this report**
-and let it show the match.
+**Screen:** in the receipt box, click **View on EASScan**, go back, then click **Verify this report**
+and let it show "Unchanged since it was recorded on-chain".
 
 **Say:** "Every report is fingerprinted on Base. Your browser re-hashes the report and compares it
 with the chain, so if anyone edits a report, it shows."
@@ -56,7 +57,8 @@ changes from "Checking…" to the marks.
 
 ### 2:20 — a real one, and what's next (20 s)
 
-**Screen:** click **"A real listing that no longer holds"** on the home page.
+**Screen:** click the **"A listing that no longer holds"** chip under the box on the home page. The
+MEXC claim is highlighted in red, and the menu clutter from the web page is folded away.
 
 **Say:** "And a real one. This release says Apex Fusion's AP3X is listed on MEXC, and it's still on three
 news sites. MEXC's own list says it isn't any more. Next: more exchanges that publish contract addresses,

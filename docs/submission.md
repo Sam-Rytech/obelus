@@ -59,6 +59,8 @@ with the attestation read straight from Base.
 - partners outside a 50-entry registry of verified official domains.
 Guessing any of these would let a fake claim verify.
 
-**Try it in 30 seconds:** open https://obelus-five.vercel.app and click **"Try a test announcement"**.
-It's labelled as a test we wrote about AERO, and it shows all three marks at once. Click any proof link,
-then **"Verify this report"** to check its receipt on Base. Or paste any crypto press-release link.
+**Try it in 30 seconds:** open https://obelus-five.vercel.app. Under the box, click **"The test
+announcement"**, which is labelled as a test we wrote about AERO and shows all three marks at once. Click
+any highlighted claim to see its proof, then **"Verify this report"** to check its receipt on Base. Or
+paste any crypto press-release link, or ask "Is $PEPE listed on MEXC?". More real checks are at
+https://obelus-five.vercel.app/examples.

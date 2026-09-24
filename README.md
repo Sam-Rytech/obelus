@@ -106,7 +106,7 @@ was published. Obelus catches that the claim no longer holds, which is exactly w
 today needs to know. The other three releases announced future listings ("will list"). Obelus marks
 those unverified `FUTURE_CLAIM` and notes that each token is now trading on MEXC.
 
-**Examples on the home page** (each opens a pre-run report):
+**Examples** (each opens a pre-run report; more at [`/examples`](https://obelus-five.vercel.app/examples)):
 
 - **A — real, clean:** [Trusted Smart Chain's CertiK audit release](https://obelus-five.vercel.app/r/5zvwvrM6FR). The audit is confirmed on CertiK's own page.
 - **B — real, doesn't hold up:** [Apex Fusion's AP3X listing release](https://obelus-five.vercel.app/r/ArfJ6uZePE). It says AP3X is listed on MEXC, and MEXC's own list no longer has it.
@@ -128,6 +128,22 @@ report and the hashes stop matching.
 
 `EAS_CHAIN` selects the network: `base-sepolia` for testing, `base` for mainnet. Each report records the
 network its receipt is on.
+
+## The site
+
+| Page | What it's for |
+|---|---|
+| `/` | Check box, and a live example of a checked announcement |
+| `/check` | The check tool on its own, with what you can paste |
+| `/r/<id>` | A report: the announcement with each claim highlighted and marked in the margin; click a claim for its proof |
+| `/r/<id>/verify` | Re-hashes the report in your browser and compares it with the receipt on Base |
+| `/examples` | Real reports, listing questions and the labelled test |
+| `/how-it-works` | What counts as proof for each kind of claim |
+| `/status` | Which sources are answering right now |
+| `/developers` | The API, receipt verification and the Telegram bot |
+
+Long web pages come with menus and footers. The report folds stretches with no claims in them, one
+click away, so the claims are what you see.
 
 ## API
 
@@ -166,7 +182,7 @@ token and the attester key are optional. Every variable is documented in
 [`.env.example`](.env.example).
 
 ```bash
-pnpm test                                   # 202 tests, no network
+pnpm test                                   # 210 tests, no network
 pnpm typecheck
 pnpm fixture fixtures/sample1.txt          # run one input through the full pipeline
 ```
@@ -174,7 +190,7 @@ pnpm fixture fixtures/sample1.txt          # run one input through the full pipe
 ## Layout
 
 ```
-app/                 Next.js pages and API routes (/, /r/[id], /r/[id]/verify, /api/*)
+app/                 Next.js pages and API routes (see "The site" above), app/_components/ for the UI
 src/lib/             pipeline, ingest, extraction, resolve, hashing, EAS, store, summary
 src/checkers/        one file per claim type; exchange/ holds WEEX, BingX and the direct-REST exchanges
 src/registry/        exchanges, auditors, partners and lockers: curated JSON, each entry verified
