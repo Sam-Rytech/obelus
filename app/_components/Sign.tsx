@@ -53,22 +53,3 @@ export function Sign({ verdict }: { verdict: Verdict }) {
   if (verdict === "CONTRADICTED") return <Obelus />;
   return <Query />;
 }
-
-export const VERDICT_WORD: Record<Verdict, string> = {
-  VERIFIED: "Verified",
-  CONTRADICTED: "Contradicted",
-  UNVERIFIED: "Unverified",
-};
-
-export function Stamp({ verdict, index, press = true }: { verdict: Verdict; index?: number; press?: boolean }) {
-  return (
-    <span
-      className="stamp"
-      data-verdict={verdict}
-      data-press={press ? "" : undefined}
-      style={index !== undefined ? ({ "--i": index } as React.CSSProperties) : undefined}
-    >
-      {VERDICT_WORD[verdict]}
-    </span>
-  );
-}

@@ -24,7 +24,15 @@ function* parseEvents(buffer: string): Generator<{ event: string; data: string }
   }
 }
 
-export function Checker({ examples }: { examples: Example[] }) {
+type Props = {
+  /** Shown as "Try" chips under the box. */
+  examples?: Example[];
+  /** "hero" on the landing page (compact), "page" on /check (roomier, with guidance). */
+  variant?: "hero" | "page";
+  autoFocus?: boolean;
+};
+
+export function Checker({ examples = [], variant = "page", autoFocus = false }: Props) {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [steps, setSteps] = useState<Step[]>([]);
@@ -93,58 +101,71 @@ export function Checker({ examples }: { examples: Example[] }) {
   }
 
   return (
-    <>
+    <div className="checker" data-variant={variant}>
       <form
-        className="check-form"
         onSubmit={(e) => {
           e.preventDefault();
           void run(input);
         }}
       >
-        <label htmlFor="input">An X post link, a web page URL, the announcement text, or a question like “Is $PEPE listed on MEXC?”</label>
-        <textarea
-          id="input"
-          name="input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste an announcement, e.g. “$NOVA is now listed on BingX and audited by CertiK…”"
-          disabled={running}
-          maxLength={20_000}
-          spellCheck={false}
-        />
-        <div className="actions">
-          <button className="button" type="submit" disabled={running || !input.trim()}>
-            {running ? "Checking…" : "Check announcement"}
-          </button>
-          {examples.map((ex) => (
-            <span key={ex.id} className="meta">
-              <button type="button" className="linkish" onClick={() => runExample(ex)} disabled={running}>
-                {ex.label}
-              </button>{" "}
-              <span>({ex.note})</span>
-            </span>
-          ))}
+        <label htmlFor="checker-input" className="checker-label">
+          Paste a link or an announcement, or ask a listing question
+        </label>
+        <div className="checker-box">
+          <textarea
+            id="checker-input"
+            name="input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                void run(input);
+              }
+            }}
+            placeholder={"https://x.com/…/status/…\nor: Is $PEPE listed on MEXC?"}
+            rows={variant === "hero" ? 3 : 7}
+            disabled={running}
+            maxLength={20_000}
+            spellCheck={false}
+            autoFocus={autoFocus}
+          />
+          <div className="checker-bar">
+            <span className="checker-hint">X posts, web pages, pasted text, or a question</span>
+            <button className="button" type="submit" disabled={running || !input.trim()}>
+              {running ? "Checking…" : "Check it"}
+            </button>
+          </div>
         </div>
       </form>
 
+      {examples.length > 0 && !running && (
+        <div className="try">
+          <span className="try-label">Try</span>
+          {examples.map((ex) => (
+            <button key={ex.id} type="button" className="chip" onClick={() => runExample(ex)} title={ex.note}>
+              {ex.chip ?? ex.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div ref={notesRef} aria-live="polite">
         {steps.length > 0 && (
-          <div className="notes">
-            <ol>
-              {steps.map((s) => (
-                <li key={`${s.t}-${s.step}`}>
-                  <span>{s.step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <ol className="progress">
+            {steps.map((s, i) => (
+              <li key={`${s.t}-${s.step}`} data-current={running && i === steps.length - 1 ? "" : undefined}>
+                {s.step}
+              </li>
+            ))}
+          </ol>
         )}
         {error && (
-          <p className="error" role="alert">
+          <p className="notice notice-error" role="alert">
             {error}
           </p>
         )}
       </div>
-    </>
+    </div>
   );
 }

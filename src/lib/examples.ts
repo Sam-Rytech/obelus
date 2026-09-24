@@ -20,6 +20,8 @@ export type Example = {
   synthetic: boolean;
   /** A pre-run report to open instead of running live (§15: demos load instantly). */
   reportId?: string;
+  /** Short label for the "Try" chips under the check box. */
+  chip?: string;
 };
 
 const TEST_ANNOUNCEMENT = `TEST ANNOUNCEMENT — written by the Obelus team for testing. Not a real statement by any project.
@@ -45,6 +47,7 @@ export const EXAMPLES: Example[] = [
     input: "https://chainwire.org/2026/01/18/trusted-smart-chain-completes-certik-audit-advancing-secure-rwa-tokenization/",
     synthetic: false,
     reportId: "5zvwvrM6FR",
+    chip: "A real CertiK audit",
   },
   {
     id: "b",
@@ -53,6 +56,15 @@ export const EXAMPLES: Example[] = [
     input: "https://chainwire.org/2025/03/13/apex-fusion-has-ap3x-token-listed-on-mexc-exchange/",
     synthetic: false,
     reportId: "ArfJ6uZePE",
+    chip: "A listing that no longer holds",
+  },
+  {
+    id: "question",
+    label: "Ask a listing question",
+    note: "Runs live: asks each exchange's own API whether BTC is trading.",
+    input: "Is $BTC listed?",
+    synthetic: false,
+    chip: "Is $BTC listed?",
   },
   {
     id: "test",
@@ -61,5 +73,46 @@ export const EXAMPLES: Example[] = [
     input: TEST_ANNOUNCEMENT,
     synthetic: true,
     reportId: "srezxyJ1aX",
+    chip: "The test announcement",
+  },
+];
+
+/** The examples page: pinned reports, grouped by what kind of input they were. */
+export type GalleryItem = {
+  reportId: string;
+  group: "announcement" | "question" | "test";
+  note: string;
+};
+
+export const GALLERY: GalleryItem[] = [
+  {
+    reportId: "ArfJ6uZePE",
+    group: "announcement",
+    note: "Apex Fusion's March 2025 release. MEXC has since dropped AP3X, and the claim is still carried by three sites.",
+  },
+  {
+    reportId: "5zvwvrM6FR",
+    group: "announcement",
+    note: "Trusted Smart Chain's audit release, confirmed on CertiK's own project page.",
+  },
+  {
+    reportId: "f0uh4Plxvf",
+    group: "announcement",
+    note: "Aligned's token launch. LambdaClass's own site confirms the partnership.",
+  },
+  {
+    reportId: "YDN3LMC6Sh",
+    group: "question",
+    note: "One question, six exchange APIs asked directly.",
+  },
+  {
+    reportId: "dAQh83lgcq",
+    group: "question",
+    note: "Name an exchange and Obelus asks only that one.",
+  },
+  {
+    reportId: "srezxyJ1aX",
+    group: "test",
+    note: "Written by the Obelus team about a real Base token, to show every mark in one run.",
   },
 ];

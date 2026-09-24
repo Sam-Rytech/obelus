@@ -125,40 +125,59 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
     };
   }, [id]);
 
+  const failed = checks.some((c) => c.state === "fail");
+  const pending = checks.some((c) => c.state === "pending");
+  const done = !fatal && checks.every((c) => c.state !== "running");
+  const outcome = !done
+    ? null
+    : failed
+      ? { category: "CONTRADICTED" as const, text: "This report was changed after it was recorded" }
+      : pending
+        ? { category: "UNVERIFIED" as const, text: "No receipt to compare against yet" }
+        : { category: "VERIFIED" as const, text: "Unchanged since it was recorded on-chain" };
+
   return (
-    <article>
-      <h1 className="title">Verify this report</h1>
-      <p className="lede">
-        Every Obelus report gets a fingerprint — a keccak256 hash of its contents — recorded on Base. This page
-        recomputes the fingerprint in your browser and reads the record straight from the chain. If anyone had
-        changed a single verdict, they would no longer match.
-      </p>
+    <div className="wrap narrow verify">
+      <header className="page-head">
+        <h1 className="page-title">Verify this report</h1>
+        <p className="page-sub">
+          Your browser recomputes the report&rsquo;s fingerprint and reads the record straight from Base. If anyone had
+          changed a single verdict, they would no longer match.
+        </p>
+      </header>
+
+      {outcome && (
+        <p className="verify-outcome" data-category={outcome.category} role="status">
+          <Sign verdict={outcome.category} />
+          {outcome.text}
+        </p>
+      )}
 
       {fatal ? (
-        <p className="error" role="alert">
+        <p className="notice notice-error" role="alert">
           {fatal}
         </p>
       ) : (
-        <ol className="claims" aria-live="polite">
+        <ol className="verify-steps" aria-live="polite">
           {checks.map((c) => (
-            <li key={c.title} className="margined">
-              <div className="sign" data-verdict={VERDICT[c.state]}>
+            <li key={c.title} data-category={VERDICT[c.state]} data-running={c.state === "running" || undefined}>
+              <span className="verify-mark">
                 <Sign verdict={VERDICT[c.state]} />
-              </div>
+              </span>
               <div>
-                <p className="check-title">{c.title}</p>
-                <p className="claim-reason meta">{c.detail}</p>
+                <p className="verify-title">{c.title}</p>
+                <p className="verify-detail">{c.detail}</p>
               </div>
             </li>
           ))}
         </ol>
       )}
 
-      <p className="actions">
-        <Link href={`/r/${id}`} className="button">
+      <p className="page-actions">
+        <Link href={`/r/${id}`} className="button button-quiet">
           Back to the report
         </Link>
       </p>
-    </article>
+    </div>
   );
 }

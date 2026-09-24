@@ -1,62 +1,88 @@
 "use client";
 
-/** The status panel (§12): which primary sources are answering right now. */
-import { useEffect, useState } from "react";
-
-import { Sign } from "./Sign";
+/** Live status of every primary source (§12), grouped by what each one is used for. */
+import { useCallback, useEffect, useState } from "react";
 
 type State = "up" | "down" | "not configured" | "configured";
 type Source = { id: string; label: string; role: string; state: State; ms?: number; detail?: string };
 type Health = { status: string; checkedAt: string; sources: Source[] };
 
-const VERDICT = {
-  up: "VERIFIED",
-  down: "CONTRADICTED",
-  "not configured": "UNVERIFIED",
-  configured: "UNVERIFIED",
-} as const;
-const WORD = {
-  up: "answering",
-  down: "not answering",
-  "not configured": "not set up",
-  configured: "set up, but not called here, to save credits",
-} as const;
+const GROUPS: { title: string; ids: string[] }[] = [
+  { title: "Exchange listings", ids: ["weex", "bingx", "mexc", "bybit", "binance", "okx"] },
+  { title: "Audits and partnerships", ids: ["certik", "tavily"] },
+  { title: "On-chain and market data", ids: ["base", "dexscreener", "defillama"] },
+  { title: "Reading the announcement", ids: ["fxtwitter", "groq", "gemini", "anthropic"] },
+  { title: "Reports and receipts", ids: ["redis", "eas"] },
+];
+
+const WORD: Record<State, string> = {
+  up: "Answering",
+  down: "Not answering",
+  "not configured": "Not set up",
+  configured: "Set up",
+};
 
 export function SourceStatus() {
   const [health, setHealth] = useState<Health | null>(null);
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setFailed(false);
     fetch("/api/health", { cache: "no-store" })
       .then((r) => r.json() as Promise<Health>)
       .then(setHealth)
-      .catch(() => setFailed(true));
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (failed) return <p className="meta">The status check itself couldn&rsquo;t run.</p>;
-  if (!health) return <p className="meta">Checking each source…</p>;
+  useEffect(load, [load]);
+
+  const grouped = health
+    ? [
+        ...GROUPS.map((g) => ({ title: g.title, sources: health.sources.filter((s) => g.ids.includes(s.id)) })),
+        {
+          title: "Other",
+          sources: health.sources.filter((s) => !GROUPS.some((g) => g.ids.includes(s.id))),
+        },
+      ].filter((g) => g.sources.length)
+    : [];
 
   return (
-    <>
-      <ul className="status-list">
-        {health.sources.map((s) => (
-          <li key={s.id} className="margined">
-            <div className="sign" data-verdict={VERDICT[s.state]}>
-              <Sign verdict={VERDICT[s.state]} />
-            </div>
-            <div>
-              <strong>{s.label}</strong> is {WORD[s.state]}
-              {s.ms !== undefined && s.state === "up" ? ` (${s.ms} ms)` : ""}
-              {s.state === "down" && s.detail ? `: ${s.detail}` : ""}
-              <span className="meta"> — {s.role}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <p className="meta">
-        Checked {new Date(health.checkedAt).toUTCString()}. If a source isn&rsquo;t answering, claims that rely on
-        it come back unverified — never guessed.
-      </p>
-    </>
+    <div className="status">
+      <div className="status-bar">
+        <p className="status-summary">
+          {failed
+            ? "The status check itself couldn’t run."
+            : !health
+              ? "Asking each source…"
+              : `${health.sources.filter((s) => s.state === "up").length} of ${health.sources.length} sources answering. Checked ${new Date(health.checkedAt).toUTCString()}.`}
+        </p>
+        <button type="button" className="button button-small button-quiet" onClick={load} disabled={loading}>
+          {loading ? "Checking…" : "Check again"}
+        </button>
+      </div>
+
+      {grouped.map((g) => (
+        <section key={g.title} className="status-group" aria-label={g.title}>
+          <h2>{g.title}</h2>
+          <ul>
+            {g.sources.map((s) => (
+              <li key={s.id} data-state={s.state}>
+                <span className="status-dot" aria-hidden="true" />
+                <span className="status-name">{s.label}</span>
+                <span className="status-role">{s.role}</span>
+                <span className="status-state">
+                  {WORD[s.state]}
+                  {s.state === "up" && s.ms !== undefined ? `, ${s.ms} ms` : ""}
+                  {s.state === "down" && s.detail ? `: ${s.detail}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }

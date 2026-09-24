@@ -22,7 +22,7 @@ export function ShareButton({ title }: { title: string }) {
   }
 
   return (
-    <button type="button" className="linkish" onClick={share}>
+    <button type="button" className="button button-small button-quiet" onClick={share}>
       {copied ? "Link copied" : "Share this report"}
     </button>
   );
