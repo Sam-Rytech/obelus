@@ -3,7 +3,7 @@
 Paste-ready text for the submission form (architecture §19 structure). Links to fill in before
 submitting are marked **TODO**.
 
-- Website: https://obelus-five.vercel.app
+- Website: https://obelus-agent.vercel.app
 - GitHub: https://github.com/Sam-Rytech/obelus (**TODO: make public**)
 - Telegram: https://t.me/Obelus_the_Bot (**TODO: channel link if separate**)
 - X: **TODO**
@@ -19,7 +19,7 @@ Short description (about 690 characters, for fields with a length limit):
 > BingX, Binance, Bybit, OKX, MEXC), CertiK's project page, the Base blockchain, the partner's own website
 > or DefiLlama. Each claim is marked verified, contradicted or unverified, with a link to its proof.
 > Missing proof is never called false. Every report gets a tamper-proof receipt on Base. It works on the
-> web, in Telegram and through an API. Live: https://obelus-five.vercel.app
+> web, in Telegram and through an API. Live: https://obelus-agent.vercel.app
 
 Form choices: Strategy **Risk Management**, Category **Risk**, Target blockchain **Base**, no token.
 
@@ -71,8 +71,8 @@ with the attestation read straight from Base.
 - partners outside a 50-entry registry of verified official domains.
 Guessing any of these would let a fake claim verify.
 
-**Try it in 30 seconds:** open https://obelus-five.vercel.app. Under the box, click **"The test
+**Try it in 30 seconds:** open https://obelus-agent.vercel.app. Under the box, click **"The test
 announcement"**, which is labelled as a test we wrote about AERO and shows all three marks at once. Click
 any highlighted claim to see its proof, then **"Verify this report"** to check its receipt on Base. Or
 paste any crypto press-release link, or ask "Is $PEPE listed on MEXC?". More real checks are at
-https://obelus-five.vercel.app/examples.
+https://obelus-agent.vercel.app/examples.

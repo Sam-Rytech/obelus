@@ -2,8 +2,8 @@
 
 Record at 1080p (720p minimum) in a clean browser window at 110–125% zoom, so the text is readable.
 Before recording, open these tabs:
-1. https://obelus-five.vercel.app
-2. The Apex Fusion AP3X report (Example B): https://obelus-five.vercel.app/r/ArfJ6uZePE
+1. https://obelus-agent.vercel.app
+2. The Apex Fusion AP3X report (Example B): https://obelus-agent.vercel.app/r/ArfJ6uZePE
 3. Telegram with @Obelus_the_Bot, or a group it's in
 
 Have `fixtures/sample1.txt` (the labelled test announcement) on the clipboard.

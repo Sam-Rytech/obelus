@@ -249,6 +249,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 | Sep 24 | Receipts written in Next's `after()` | The user gets their link without waiting on gas (§11), and the serverless function stays alive until the attestation lands |
 | Sep 24 | Health panel never reports a key as "up" | "Anthropic is answering" was showing while the account had no credit. Anthropic now gets a real 1-token probe; Tavily shows "set up, not called" |
 | Sep 24 | Attester wallet generated locally | Key written straight to .env.local and Vercel (sensitive); only the address was ever printed |
+| Sep 25 | **Site address → obelus-agent.vercel.app** (Sam's call); repo made public | Added as a project domain; `PUBLIC_BASE_URL` and the Telegram webhook moved to it. obelus-five.vercel.app keeps serving the same deployment, because receipts already on Base record report links on it |
 | Sep 24 | **Frontend rebuilt: "annotated document", multi-page** (Sam: "patched up wound… too much text"; picked the direction, all pages, no deadline pressure) | Reports now show the announcement itself with each claim highlighted and its mark in the margin; proof opens in a rail (bottom sheet on phones). Claim-free stretches (web-page menus, footers) fold. New pages: landing, /check, /examples, /how-it-works (replaces /method, which redirects), /status, /developers; OG share cards. Type: Newsreader (the document) + Schibsted Grotesk (the interface); colour only ever means a verdict. UI only — engine, API, schema and hashes unchanged; /r/<id> URLs (recorded in receipts) kept |
 | Sep 23 | **Example B → Apex Fusion AP3X (a real contradiction)**, replacing Aligned | The 22-announcement batch found no real contradictions. Hunting for fake "renounced" claims on 89 trending Base tokens found none. A targeted re-check of 2025 MEXC listing releases did: "AP3X Token Listed on MEXC" (Chainwire, Mar 2025, republished by Crypto Times and Blockster) is CONTRADICTED on all three. MEXC's exhaustive list has no AP3X; CoinGecko independently shows DEX-only markets. Framed as "no longer holds" (true when published), never as a lie. The other three releases were future-tense, so FUTURE_CLAIM plus "already trading" |
 | Sep 23 | **Listing questions answered directly** ("is $BTC listed?", Sam's request) | A question gave an empty report. Code parses ticker + exchanges (all six supported if none named) and runs the ordinary listing checks — no model call, no contract resolution (a guess could pick a same-ticker clone). Reports carry `mode: "question"`; announcement reports and their hashes are unchanged. Other questions get a hint on what to paste. Production: BTC answered by all 6 exchanges in one check |
@@ -275,7 +276,7 @@ that re-asserts its finding, so they double as regression tests if an upstream c
 
 ## Status
 **Current phase:** Day 5 — demo content done; submission waits on Sam's items below.
-**Live:** https://obelus-five.vercel.app
+**Live:** https://obelus-agent.vercel.app
 
 **Done Sep 23 (Day 5):** 22 real announcements run through the live site: 20 checked, 104 claims, 34
 checkable → 3 verified, 0 contradicted, 31 unverified, 70 not checkable yet, 0 source errors, median

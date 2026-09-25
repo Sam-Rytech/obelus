@@ -8,7 +8,7 @@ the text itself. Obelus pulls out every checkable claim ("listed on WEEX", "audi
 confirm it**, and marks it **verified**, **contradicted** or **unverified**. Every mark comes with a link to
 its proof, and every report gets a tamper-evident receipt on Base.
 
-- **Live:** https://obelus-five.vercel.app
+- **Live:** https://obelus-agent.vercel.app
 - **Telegram:** [@Obelus_the_Bot](https://t.me/Obelus_the_Bot) — `/check <link or text>`, or reply `/check` to a message
 - **Built for** the Orion Builder Hackathon (Base)
 
@@ -108,12 +108,12 @@ was published. Obelus catches that the claim no longer holds, which is exactly w
 today needs to know. The other three releases announced future listings ("will list"). Obelus marks
 those unverified `FUTURE_CLAIM` and notes that each token is now trading on MEXC.
 
-**Examples** (each opens a pre-run report; more at [`/examples`](https://obelus-five.vercel.app/examples)):
+**Examples** (each opens a pre-run report; more at [`/examples`](https://obelus-agent.vercel.app/examples)):
 
-- **A — real, clean:** [Trusted Smart Chain's CertiK audit release](https://obelus-five.vercel.app/r/5zvwvrM6FR). The audit is confirmed on CertiK's own page.
-- **B — real, doesn't hold up:** [Apex Fusion's AP3X listing release](https://obelus-five.vercel.app/r/ArfJ6uZePE). It says AP3X is listed on MEXC, and MEXC's own list no longer has it.
-- Also real: [Aligned's $ALIGN launch](https://obelus-five.vercel.app/r/f0uh4Plxvf). LambdaClass's own site confirms the partnership.
-- **C — labelled test:** [a test announcement about AERO](https://obelus-five.vercel.app/r/srezxyJ1aX), written by the Obelus team to show all three marks in one run. Among other claims, CertiK's own page contradicts "audited by CertiK". The report is labelled as a test everywhere it appears.
+- **A — real, clean:** [Trusted Smart Chain's CertiK audit release](https://obelus-agent.vercel.app/r/5zvwvrM6FR). The audit is confirmed on CertiK's own page.
+- **B — real, doesn't hold up:** [Apex Fusion's AP3X listing release](https://obelus-agent.vercel.app/r/ArfJ6uZePE). It says AP3X is listed on MEXC, and MEXC's own list no longer has it.
+- Also real: [Aligned's $ALIGN launch](https://obelus-agent.vercel.app/r/f0uh4Plxvf). LambdaClass's own site confirms the partnership.
+- **C — labelled test:** [a test announcement about AERO](https://obelus-agent.vercel.app/r/srezxyJ1aX), written by the Obelus team to show all three marks in one run. Among other claims, CertiK's own page contradicts "audited by CertiK". The report is labelled as a test everywhere it appears.
 
 ## Receipts
 

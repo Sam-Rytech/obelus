@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Call Obelus from your own code or bot, verify its receipts yourself, or add it to a Telegram group.",
 };
 
-const BASE = (process.env.PUBLIC_BASE_URL || "https://obelus-five.vercel.app").replace(/\/$/, "");
+const BASE = (process.env.PUBLIC_BASE_URL || "https://obelus-agent.vercel.app").replace(/\/$/, "");
 
 const CHECK_CURL = `curl -N ${BASE}/api/check \\
   -H "content-type: application/json" \\
