@@ -1,4 +1,4 @@
-Obelus checks crypto announcements claim by claim against the one source that can confirm each claim. It's for anyone about to buy, list or republish on the strength of a press release.
+Obelus is a fact-checking agent for crypto announcements. It checks each claim against the one source that can confirm it, for anyone about to buy, list or republish on the strength of a press release.
 
 Chainstory analysed 2,893 crypto press releases: only about 2% held meaningful news, and more than 60% promoted projects showing signs of fraud. The same release is paid onto dozens of sites, so one fake "listed on BingX" or "audited by CertiK" ends up looking like coverage everywhere. AI-text detectors tell you whether a machine wrote the text. They can't tell you whether the claims are true.
 

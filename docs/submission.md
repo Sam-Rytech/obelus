@@ -11,8 +11,20 @@ submitting are marked **TODO**.
 
 ---
 
-**Obelus checks crypto announcements claim by claim against the one source that can confirm each claim.
-It's for anyone about to buy, list or republish on the strength of a press release.**
+Short description (about 690 characters, for fields with a length limit):
+
+> Obelus is a fact-checking agent for crypto announcements. Paste an X post, a press-release link or the
+> text, or ask "Is $PEPE listed on MEXC?". A model only pulls out the claims, quoting each one exactly.
+> Code then checks each claim against the one source that can confirm it: the exchange's own API (WEEX,
+> BingX, Binance, Bybit, OKX, MEXC), CertiK's project page, the Base blockchain, the partner's own website
+> or DefiLlama. Each claim is marked verified, contradicted or unverified, with a link to its proof.
+> Missing proof is never called false. Every report gets a tamper-proof receipt on Base. It works on the
+> web, in Telegram and through an API. Live: https://obelus-five.vercel.app
+
+Form choices: Strategy **Risk Management**, Category **Risk**, Target blockchain **Base**, no token.
+
+**Obelus is a fact-checking agent for crypto announcements. It checks each claim against the one source
+that can confirm it, for anyone about to buy, list or republish on the strength of a press release.**
 
 Chainstory analysed 2,893 crypto press releases: only about 2% held meaningful news, and more than 60%
 promoted projects showing signs of fraud. The same release is paid onto dozens of sites, so one fake
