@@ -1,5 +1,7 @@
 # Obelus
 
+![Obelus: every claim, checked at its source](public/brand/obelus-banner.png)
+
 Obelus fact-checks crypto announcements one claim at a time. Paste an X post, a press-release link or
 the text itself. Obelus pulls out every checkable claim ("listed on WEEX", "audited by CertiK",
 "ownership renounced", "partnered with LambdaClass"), checks each one against **the one source that can
